@@ -1,0 +1,284 @@
+C51 COMPILER V9.01   MAIN                                                                  11/26/2019 21:50:49 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN Z:\main.obj
+COMPILER INVOKED BY: F:\mdk4\C51\BIN\C51.EXE main.c BROWSE ORDER DEBUG OBJECTEXTEND OBJECT(Z:\main.obj)
+
+line level    source
+
+   1          /**************************************************************************************
+   2          *       2019-4-15 温度控制   袁丁                               ***/
+   3          #include "REG52.h"                       //此文件中定义了单片机的一些特殊功能寄存器
+   4          #include "XPT2046.h"
+   5          #include "I2C.h"
+   6          #define TIMESEC 1000   //定时显示 当前温度
+   7          typedef unsigned int u16;         //对数据类型进行声明定义
+   8          typedef unsigned char u8;  
+   9          #define BYTE0(dwTemp)       (*(char *)(&dwTemp))          //取字 高8位
+  10          #define BYTE1(dwTemp)       (*((char *)(&dwTemp) + 1))     //取 低8位
+  11          #define ON   0    //点亮led灯
+  12          #define OFF   1   //关led灯
+  13           sbit keyincadd = P1^0;  //定义P10口是  增加温度的 加 +
+  14          sbit keyincsub = P1^1;   //             减温度的 减 -
+  15          sbit keysubadd = P1^2;   //定义P10口是  增加温度的 加 +
+  16          sbit keysubsub = P1^3;   //             减温度的 减 -
+  17          sbit keyfun =    P1^4;   //      功能键
+  18          
+  19          sbit led=P2^7;   //定义P20口是led
+  20          sbit led2=P2^6;
+  21          sbit LSA=P2^2;
+  22          sbit LSB=P2^3;
+  23          sbit LSC=P2^4 ;
+  24          u8 data   time100ms;     //延时 100ms
+  25          u8 data currenttemp;   //当前温度
+  26          u8 data setaddtemp;   //设置的增加（关闭的温度） 温度
+  27          u8 data setsubtemp;   //设置的减少（起始打开电器）温度
+  28          bdata  tfun ;      // 功能键 +   几个标志位   00000XXX  ;XXX 为功能键。 设置位字节
+  29          sbit relay=tfun^4 ;             //当前 继电器开状态 
+  30          
+  31          u8  data  timei ; //临时变量
+  32          u16 data timesec ;  //1 秒 延时
+  33          u16 data  temp;         //当前温度
+  34          u8  data  disp[8] ;              //当前 温度数据
+  35          u8 code smgduan[17]= {0x3f,0x06,0x5b,0x4f,0x66,0x6d,0x7d,0x07,0x7f,0x6f,0x77,0x7c,0x39,
+  36                                                          0x5e,0x79,0x71,0x40};   //16 为  - 
+  37          
+  38          /***函 数 名         : delay       1ms            ***/
+  39          void delay()
+  40          {
+  41   1                 time100ms = 3;
+  42   1                 while(1) {
+  43   2                      if (  time100ms == 0)  return;
+  44   2                      }
+  45   1      }
+  46          
+  47          /** 函数名   :DigDisplay()  * 函数功能           :数码管显示函数   ****/
+  48          void DigDisplay()  {
+  49   1          u8 i;
+  50   1              timei =  tfun&0x0f;
+  51   1      //      if ( timei != 0 ) return ;
+  52   1                  for(i=0; i<8; i++)
+  53   1                  {
+  54   2                     switch(i) {       //位选，选择点亮的数码管，
+  55   3                              case(0):
+C51 COMPILER V9.01   MAIN                                                                  11/26/2019 21:50:49 PAGE 2   
+
+  56   3                                  LSA=0;  LSB=0; LSC=0;                     break;//显示第0位
+  57   3                              case(1):
+  58   3                                  LSA=1; LSB=0;    LSC=0;                   break;//显示第1位
+  59   3                              case(2):
+  60   3                                  LSA=0;     LSB=1;  LSC=0;             break;//显示第2位
+  61   3                              case(3):
+  62   3                                  LSA=1;       LSB=1;  LSC=0;               break;//显示第3位
+  63   3                                      case(4):
+  64   3                                              LSA=0;LSB=0;LSC=1; break;//显示第4位
+  65   3              //                      case(5):
+  66   3              //                              LSA=1;LSB=0;LSC=1; break;//显示第5位
+  67   3                                      case(6):
+  68   3                                              LSA=0;LSB=1;LSC=1; break;//显示第6位
+  69   3                                      case(7):
+  70   3                                              LSA=1;LSB=1;LSC=1; break;//显示第7位    
+  71   3                      }
+  72   2                      P0=disp[i];//发送数据
+  73   2                      delay(); //间隔一段时间扫描
+  74   2                  //    P0=0x00;//消隐
+  75   2                  }
+  76   1      }
+  77           /*******************************************************************************
+  78          * 函 数 名         : void Timer0() interrupt 1
+  79          * 函数功能                 : 定时器0中断函数
+  80          *******************************************************************************/
+  81          void Timer0() interrupt 1       {
+  82   1          static u16 ini;
+  83   1          TH0=0XFC;   //给定时器赋初值，定时1ms
+  84   1          TL0=0X18;
+  85   1          ini++;
+  86   1          if(ini==1000)
+  87   1          {
+  88   2              ini=0;
+  89   2            }
+  90   1          if ( time100ms != 0 ) {
+  91   2              time100ms--;
+  92   2          }
+  93   1      }
+  94           void datapros()         {
+  95   1      //      static u8 i;
+  96   1      //      if(i==10)               {
+  97   1      //              i=0;
+  98   1                      temp = Read_AD_Data(0x94);              //   AIN0 电位器
+  99   1      //      }
+ 100   1      //      i++;
+ 101   1              timei =  tfun&0x0f;
+ 102   1              if ( timei != 0 ) return ;                       //不显示温度  进入功能键状态
+ 103   1              disp[2]=smgduan[temp/1000];                     //千位
+ 104   1              timei = smgduan[temp%1000/100]; 
+ 105   1              disp[3]=timei|0x80;;            //百位
+ 106   1              disp[4]=smgduan[temp%1000%100/10];//个位
+ 107   1              disp[5]=smgduan[temp%1000%100%10];              
+ 108   1      }
+ 109          void disp0(u8 fun) {
+ 110   1              disp[0]=smgduan[0];//千位
+ 111   1              disp[1]=smgduan[0];//百位
+ 112   1              disp[2]=smgduan[15];//千位
+ 113   1              disp[3]=smgduan[16];//百位
+ 114   1              disp[4]=smgduan[fun];//个位
+ 115   1              disp[5]=smgduan[0xff];
+ 116   1              disp[6]=smgduan[0];//千位
+ 117   1              disp[7]=smgduan[0];//百位       
+C51 COMPILER V9.01   MAIN                                                                  11/26/2019 21:50:49 PAGE 3   
+
+ 118   1                      
+ 119   1       }
+ 120          u8 gettemp() {
+ 121   1                      timei = (temp/1000);                    //换算温度    
+ 122   1                      timei = timei*10 + (temp%1000/100);     
+ 123   1                      return  timei;
+ 124   1      }
+ 125          /*******************************************************************************
+ 126          * 函 数 名       : main
+ 127          * 函数功能               : 主函数
+ 128          *******************************************************************************/
+ 129          void main()
+ 130          {               //      timesec = 0xaa55;               timei= BYTE0(timesec) ;         timei= BYTE1(timesec) ;
+ 131   1          TMOD|=0X01;//Timer0Init()    选择为定时器0模式，工作方式1，仅用TR0打开启动。
+ 132   1          TH0=0XFC;   //给定时器赋初值，定时1ms
+ 133   1          TL0=0X18;
+ 134   1          ET0=1;//打开定时器0中断允许
+ 135   1          EA=1;//打开总中断
+ 136   1          TR0=1;//打开定时器
+ 137   1              timei = At24c02Read(0);   currenttemp = At24c02Read(1);
+ 138   1              if ( timei != 0x55 && currenttemp != 0XAA) {       //是否已经 初次运行
+ 139   2                      setaddtemp =25;  //关闭温度
+ 140   2                      At24c02Write(0,0x55);   At24c02Write(1,0xAA); At24c02Write(2,25); 
+ 141   2               At24c02Write(3,18);     At24c02Write(4,0);  
+ 142   2                      setsubtemp =18  ;         //开机温度
+ 143   2              }
+ 144   1              else {           //已经初始化
+ 145   2                      setaddtemp =  At24c02Read(2);   setsubtemp =  At24c02Read(3);
+ 146   2                      tfun =  At24c02Read(4);
+ 147   2              }
+ 148   1              disp[0]=smgduan[setaddtemp/10];//10位
+ 149   1              disp[1]=smgduan[setaddtemp%10%10];//个位位
+ 150   1          disp[6]=smgduan[setsubtemp/10];//10位
+ 151   1              disp[7]=smgduan[setsubtemp%10%10];//个位位
+ 152   1      
+ 153   1            while(1)   {         //主循环
+ 154   2                 datapros();          DigDisplay() ;      //显示当前温度
+ 155   2                      timei =  tfun&0x0f;
+ 156   2              if ( timei != 0 ) goto jmpkey ;   //功能键1-2  非 0 
+ 157   2               
+ 158   2                 if(keyincadd==0)      {        //检测按键增加按下
+ 159   3                      delay();   //消除抖动 一般大约10ms
+ 160   3                      if(keyincadd==0)         //再次判断按键是否按下
+ 161   3                      {
+ 162   4                        setaddtemp++;
+ 163   4                                if (setaddtemp > 99 )  { setaddtemp--; }
+ 164   4                                disp[0]=smgduan[setaddtemp/10];//10位
+ 165   4                                disp[1]=smgduan[setaddtemp%10%10];//个位
+ 166   4                      }
+ 167   3               while(!keyincadd);      //检测按键是否松开
+ 168   3                        At24c02Write(2,setaddtemp); 
+ 169   3                              timei=gettemp(); 
+ 170   3                              if ( timei < setaddtemp )       led = ON;       
+ 171   3             }
+ 172   2                      if(keyincsub==0)         {        //检测按键--按下      +++++++------------
+ 173   3                      delay(); 
+ 174   3                      if(keyincsub==0)  {      //再次判断按键是否按下
+ 175   4                                if ( setaddtemp != 0 )  setaddtemp--;
+ 176   4                                disp[0]=smgduan[setaddtemp/10];//10位
+ 177   4                                disp[1]=smgduan[setaddtemp%10%10];//个位位
+ 178   4                      }
+ 179   3                 while(!keyincsub);    //检测按键是否松开
+C51 COMPILER V9.01   MAIN                                                                  11/26/2019 21:50:49 PAGE 4   
+
+ 180   3                         At24c02Write(2,setaddtemp); 
+ 181   3                              timei=gettemp();
+ 182   3                              if ( timei > setaddtemp )       led = OFF;
+ 183   3             }
+ 184   2                         if(keysubadd==0)      {        //SUB 检测-- 增加按  -----------++++++++++
+ 185   3                      delay();  
+ 186   3                      if(keysubadd == 0)       //再次判断按键是否按下
+ 187   3                      {
+ 188   4                        setsubtemp++;
+ 189   4                                if (setsubtemp > 99 )  { setsubtemp--; }
+ 190   4                                disp[6]=smgduan[setsubtemp/10];//10位
+ 191   4                                disp[7]=smgduan[setsubtemp%10%10];//个位位
+ 192   4                      }
+ 193   3               while(!keysubadd);      //检测按键是否松开
+ 194   3                       At24c02Write(3,setsubtemp); 
+ 195   3                       timei = gettemp(); //           led = ON;
+ 196   3                   if ( timei < setsubtemp )  led = OFF;
+ 197   3             }
+ 198   2                      if(keysubsub==0)         {        //检测按键--按下 --------   -------
+ 199   3                      delay(); 
+ 200   3                      if(keysubsub==0)  {      //再次判断按键是否按下
+ 201   4                                if ( setsubtemp != 0 )  setsubtemp--;
+ 202   4                                disp[6]=smgduan[setsubtemp/10];//10位
+ 203   4                                disp[7]=smgduan[setsubtemp%10%10];//个位位
+ 204   4                      }
+ 205   3                 while(!keysubsub);    //检测按键是否松开
+ 206   3                         At24c02Write(3,setsubtemp); 
+ 207   3      //                timei=gettemp(); //            led = ON;
+ 208   3      //           if ( timei > setsubtemp )  led = ON;
+ 209   3             }
+ 210   2       jmpkey:
+ 211   2              if(keyfun==0)    {        //检测按键功能键按下
+ 212   3                      delay(); 
+ 213   3                  if(keyfun==0)  {
+ 214   4                               tfun++;        
+ 215   4                        timei =  tfun&0x0f;
+ 216   4                    switch (timei)
+ 217   4                              {
+ 218   5                                      case 1: relay=0;        disp0(timei);     //关继电器
+ 219   5                                                      break;
+ 220   5                                      case 2:  relay=1;  disp0(timei);
+ 221   5                                              break;
+ 222   5      
+ 223   5                                      default:  tfun = tfun&0xf0;
+ 224   5                                                disp[0]=smgduan[setaddtemp/10];//10位
+ 225   5                                                disp[1]=smgduan[setaddtemp%10%10];//个位位
+ 226   5                                                disp[6]=smgduan[setsubtemp/10];//10位
+ 227   5                                                disp[7]=smgduan[setsubtemp%10%10];//个位位
+ 228   5                                              break;
+ 229   5                              }
+ 230   4               }
+ 231   3                 while(!keyfun);       //检测按键是否松开
+ 232   3                         At24c02Write(4,tfun); 
+ 233   3             }
+ 234   2                      
+ 235   2              timei = gettemp();                      //换算温度    
+ 236   2                      currenttemp == tfun&0x0f ;
+*** WARNING C275 IN LINE 236 OF MAIN.C: expression with possibly no effect
+ 237   2                 if (  currenttemp  == 0 ) {
+ 238   3                              if( (timei < setsubtemp) ) {   //打开继电器
+ 239   4                                    led=ON;
+ 240   4                              } 
+C51 COMPILER V9.01   MAIN                                                                  11/26/2019 21:50:49 PAGE 5   
+
+ 241   3                              else if (timei > setaddtemp) {
+ 242   4                                      led = OFF;
+ 243   4                              } 
+ 244   3                      }
+ 245   2                      timei =  tfun&0x0f;       //功能 1-2 
+ 246   2                      led2=OFF;
+ 247   2                      if (  timei != 0)       { led2=ON;  led =OFF;  }
+ 248   2                      if (  timei == 2)        led =ON;
+ 249   2      
+ 250   2           }
+ 251   1      }
+ 252          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1018    ----
+   CONSTANT SIZE    =     17    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     21    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)

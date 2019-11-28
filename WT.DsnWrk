@@ -1,0 +1,8 @@
+[ProjectGroup]
+Version=1.0
+[Project1]
+ProjectPath=..\AD10\原理图线路板\PCB_Project1.PrjPCB
+[Project2]
+ProjectPath=F:\OneDrive\文档\AD19\Examples\Bluetooth Sentinel\Bluetooth_Sentinel.PrjPcb
+[Project3]
+ProjectPath=..\AD10\AD17绘制89C51开发板全程实战视频\89C51-SCH\89C51\89C51.PrjPcb
