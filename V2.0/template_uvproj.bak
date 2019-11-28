@@ -361,6 +361,16 @@
               <FileType>1</FileType>
               <FilePath>.\lcd.c</FilePath>
             </File>
+            <File>
+              <FileName>ds1302.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\ds1302.c</FilePath>
+            </File>
+            <File>
+              <FileName>ds1302.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\ds1302.h</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>

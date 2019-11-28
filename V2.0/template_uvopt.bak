@@ -167,10 +167,10 @@
       <FileType>1</FileType>
       <tvExp>1</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>13</ColumnNumber>
+      <ColumnNumber>31</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>108</TopLine>
-      <CurrentLine>126</CurrentLine>
+      <TopLine>102</TopLine>
+      <CurrentLine>116</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\main.c</PathWithFileName>
       <FilenameWithoutPath>main.c</FilenameWithoutPath>
@@ -195,20 +195,48 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>38</ColumnNumber>
+      <ColumnNumber>12</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>1</TopLine>
-      <CurrentLine>3</CurrentLine>
+      <TopLine>102</TopLine>
+      <CurrentLine>108</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\lcd.c</PathWithFileName>
       <FilenameWithoutPath>lcd.c</FilenameWithoutPath>
+    </File>
+    <File>
+      <GroupNumber>1</GroupNumber>
+      <FileNumber>0</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <Focus>0</Focus>
+      <ColumnNumber>18</ColumnNumber>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>1</TopLine>
+      <CurrentLine>1</CurrentLine>
+      <bDave2>0</bDave2>
+      <PathWithFileName>.\ds1302.c</PathWithFileName>
+      <FilenameWithoutPath>ds1302.c</FilenameWithoutPath>
+    </File>
+    <File>
+      <GroupNumber>1</GroupNumber>
+      <FileNumber>0</FileNumber>
+      <FileType>5</FileType>
+      <tvExp>0</tvExp>
+      <Focus>0</Focus>
+      <ColumnNumber>0</ColumnNumber>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
+      <bDave2>0</bDave2>
+      <PathWithFileName>.\ds1302.h</PathWithFileName>
+      <FilenameWithoutPath>ds1302.h</FilenameWithoutPath>
     </File>
   </Group>
 
   <AlienFiles>
     <PathWithFilename>D:\单片机资料\WT\V2.0\lcd.h</PathWithFilename>
-    <TopLine>10</TopLine>
-    <CurrentLine>12</CurrentLine>
+    <TopLine>20</TopLine>
+    <CurrentLine>43</CurrentLine>
     <Constant>0</Constant>
     <WindowPosition>
       <length>0</length>
@@ -1624,19 +1652,19 @@
     <ActiveMDIGroup>0</ActiveMDIGroup>
     <MDIGroup>
       <Size>100</Size>
-      <ActiveTab>4</ActiveTab>
+      <ActiveTab>0</ActiveTab>
       <Documents>
         <Doc>
           <Name>.\main.c</Name>
-          <ColumnNumber>13</ColumnNumber>
-          <TopLine>108</TopLine>
-          <CurrentLine>126</CurrentLine>
+          <ColumnNumber>31</ColumnNumber>
+          <TopLine>102</TopLine>
+          <CurrentLine>116</CurrentLine>
         </Doc>
         <Doc>
           <Name>.\RF2401.H</Name>
-          <ColumnNumber>3</ColumnNumber>
+          <ColumnNumber>0</ColumnNumber>
           <TopLine>1</TopLine>
-          <CurrentLine>1</CurrentLine>
+          <CurrentLine>2</CurrentLine>
         </Doc>
         <Doc>
           <Name>D:\单片机资料\WT\V2.0\README.TXT</Name>
@@ -1652,15 +1680,27 @@
         </Doc>
         <Doc>
           <Name>.\lcd.c</Name>
-          <ColumnNumber>38</ColumnNumber>
-          <TopLine>1</TopLine>
-          <CurrentLine>3</CurrentLine>
+          <ColumnNumber>12</ColumnNumber>
+          <TopLine>102</TopLine>
+          <CurrentLine>108</CurrentLine>
         </Doc>
         <Doc>
           <Name>D:\单片机资料\WT\V2.0\lcd.h</Name>
+          <ColumnNumber>16</ColumnNumber>
+          <TopLine>20</TopLine>
+          <CurrentLine>43</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>.\ds1302.c</Name>
           <ColumnNumber>18</ColumnNumber>
-          <TopLine>10</TopLine>
-          <CurrentLine>12</CurrentLine>
+          <TopLine>1</TopLine>
+          <CurrentLine>1</CurrentLine>
+        </Doc>
+        <Doc>
+          <Name>.\ds1302.h</Name>
+          <ColumnNumber>0</ColumnNumber>
+          <TopLine>6</TopLine>
+          <CurrentLine>29</CurrentLine>
         </Doc>
       </Documents>
     </MDIGroup>
