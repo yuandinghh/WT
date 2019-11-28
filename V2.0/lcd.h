@@ -9,7 +9,7 @@
 /**********************************
 包含头文件
 **********************************/
-#include "reg51.h"
+#include <reg51.h>
 
 //---重定义关键词---//
 #ifndef uchar
@@ -37,7 +37,8 @@ void Lcd1602_Delay1ms(uint c);   //误差 0us
 void LcdWriteCom(uchar com);
 /*LCD1602写入8位数据子函数*/	
 void LcdWriteData(uchar dat)	;
-/*LCD1602初始化子程序*/		
-void LcdInit();						  
-
+void LcdInit();	/*LCD1602初始化子程序*/		
+void  LcdDisplaytime(); 
+void LcdDisplay1(char str[],uchar x) ;
+void LcdDisplay2(char str[],uchar x) ;
 #endif

@@ -1,4 +1,5 @@
 "main.obj",
-"lcd.obj" 
+"lcd.obj",
+"ds1302.obj" 
 TO "template" 
 RAMSIZE(256) 

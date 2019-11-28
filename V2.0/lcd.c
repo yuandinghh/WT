@@ -1,9 +1,11 @@
 #include "lcd.h"
+#include "ds1302.h"
+#include <string.h>
+						   
+/* 函 数 名         : Lcd1602_Delay1ms * 函数功能	   : 延时函数，延时1ms
+* 输    入         : c	  说名      : 该函数是在12MHZ晶振下，12分频单片机的延时。******/
 
-/* 函 数 名         : Lcd1602_Delay1ms
-* 函数功能		   : 延时函数，延时1ms
-* 输    入         : c
-* 说    名         : 该函数是在12MHZ晶振下，12分频单片机的延时。******/
+// uchar TIME[7];
 
 void Lcd1602_Delay1ms(uint c)   //误差 0us
 {
@@ -20,7 +22,7 @@ void Lcd1602_Delay1ms(uint c)   //误差 0us
 /*** 函 数 名       : LcdWriteCom
 * 函数功能		   : 向LCD写入一个字节的命令
 * 输    入         : com   ***/
-#ifndef 	LCD1602_4PINS	 //当没有定义这个LCD1602_4PINS时
+#ifndef LCD1602_4PINS	 //当没有定义这个LCD1602_4PINS时
 void LcdWriteCom(uchar com)	  //写入命令
 {
 	LCD1602_E = 0;     //使能
@@ -101,8 +103,6 @@ void LcdWriteData(uchar dat)			//写入数据
 /*******************************************************************************
 * 函 数 名       : LcdInit()
 * 函数功能		 : 初始化LCD屏
-* 输    入       : 无
-* 输    出       : 无
 *******************************************************************************/		   
 #ifndef		LCD1602_4PINS
 void LcdInit()						  //LCD初始化子程序
@@ -124,3 +124,40 @@ void LcdInit()			  //LCD初始化子程序
 	LcdWriteCom(0x80);  //设置数据指针起点
 }
 #endif
+
+void LcdDisplay1(char str[],uchar x) {  //line 1
+	uchar len,i;   len = strlen(str);
+	 i = 0x80+ x; LcdWriteCom(i);	
+	for(i=0;i<len;i++) LcdWriteData(str[i]);
+}
+void LcdDisplay2(char str[],uchar x) {  //line 2
+	uchar len,i;   len = strlen(str);
+	 i = 0x80+0x40+ x; LcdWriteCom(i);	
+	for(i=0;i<len;i++) LcdWriteData(str[i]);
+}
+
+void  LcdDisplaytime()	   {
+	LcdWriteCom(0x80+0X40);		   //第二行显示
+	LcdWriteData('0'+TIME[2]/16);				//时
+	LcdWriteData('0'+(TIME[2]&0x0f));				 
+	LcdWriteData('-');
+	LcdWriteData('0'+TIME[1]/16);				//分
+	LcdWriteData('0'+(TIME[1]&0x0f));	
+	LcdWriteData('-');
+	LcdWriteData('0'+TIME[0]/16);				//秒
+	LcdWriteData('0'+(TIME[0]&0x0f));
+
+	LcdWriteCom(0x80);		  //第一行显示
+	LcdWriteData('2');
+	LcdWriteData('0');
+	LcdWriteData('0'+TIME[6]/16);			//年
+	LcdWriteData('0'+(TIME[6]&0x0f));
+	LcdWriteData('-');
+	LcdWriteData('0'+TIME[4]/16);			//月
+	LcdWriteData('0'+(TIME[4]&0x0f));
+	LcdWriteData('-');
+	LcdWriteData('0'+TIME[3]/16);			//日
+	LcdWriteData('0'+(TIME[3]&0x0f));
+	LcdWriteCom(0x8D);	  //  第13为显示0 开始 。
+	LcdWriteData('0'+(TIME[5]&0x07));	//星期			 
+}

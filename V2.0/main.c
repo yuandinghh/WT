@@ -1,6 +1,6 @@
 //2019-11-27 8051造轮子  袁丁
 #include "lcd.h"
-#include "reg51.h"			 //此文件中定义了单片机的一些特殊功能寄存器
+#include <reg51.h>			 //此文件中定义了单片机的一些特殊功能寄存器
 #include "RF2401.h"	
 #include"ds1302.h"
 #include <intrins.h>
@@ -10,10 +10,11 @@ uchar  sta,i;    //  状态变量
 #define TX_DS  (sta & 0x20)  // 发射成功中断标志
 #define MAX_RT (sta & 0x10)  // 重发溢出中断标志
 #define sbuflen	 50   //串行接受长度
-
+#define	  delayus()  _delay_us()
+#define	 delayms()	  _delay_ms()
 bit sbufoverflow = 0 ;	  //keil定义位变量
 u8 sbuf[sbuflen], sbufc=0;
-
+unsigned char SetState,SetPlace;
 sbit CE=P1^5;
 sbit IRQ=P1^0;
 sbit CSN=P1^4;
@@ -23,10 +24,18 @@ sbit SCK=P1^3;
 sbit led=P2^0;  sbit LED=P2^0;       //sbit LED=P0^0;
 sbit led1=P2^1;	sbit led2=P2^2;  sbit led3=P2^3;
 sbit k1 = P3^1 ;    sbit  k2=  P3^0; sbit  k3 = P3^2; sbit  k4 = P3^3;  //key
+sbit K1=P3^1; sbit K2=P3^0; sbit K3=P3^2; sbit K4=P3^3;
 uchar code TX_Addr[]={0x34,0x43,0x10,0x10,0x01};
 uchar code TX_Buffer[]={0xfe,0xfd,0xfb,0xf7,0xef,0xdf,0xbf,0x7f};
 uchar RX_Buffer[RX_DATA_WITDH];
 
+unsigned char SetState,SetPlace;
+//void Delay10ms(void);   //误差 0us
+void sbufsend(uchar c) {
+	SBUF=c;				//将接收到的数据放入到发送寄存器
+	while(!TI);						 //等待发送数据完成
+	TI=0;
+}	
 void _delay_us(uint x)	   {		 //延时 纳秒
  uint i,j;
  for (j=0;j<x;j++)
@@ -38,8 +47,8 @@ void _delay_ms(uint x)
  for (j=0;j<x;j++)
   for (i=0;i<120;i++);
 }
-//nRF24L01初始化
-void nRF24L01_Init(void)
+
+void nRF24L01_Init(void)	   //nRF24L01初始化
 {
  CE=0;//待机模式Ⅰ
  CSN=1;
@@ -129,7 +138,7 @@ void nRF24L01_Set_TX_Mode(uchar *TX_Data)	   //设置发送模式
  SPI_W_Reg(W_REGISTER+RF_SETUP,0x07);//1Mbps速率,发射功率:0DBM,低噪声放大器增益
  SPI_W_Reg(W_REGISTER+CONFIG,0x0e);//发送模式,上电,16位CRC校验,CRC使能
  CE=1;//启动发射
- _delay_ms(5);//CE高电平持续时间最少10US以上
+ delayms(5);//CE高电平持续时间最少10US以上
 }
 uchar Check_Ack(void)	    //检测应答信号
 {
@@ -187,79 +196,108 @@ void UsartInit()	 //系统初始化
 	TR1=1;					//打开计数器 	TMOD|=0X01;//选择为定时器0模式，工作方式1，仅用TR0打开启动。
 	TH0=0XFC;	TL0=0X18;   	//给定时器赋初值，定时1ms
 	ET0=1;		TR0=1;			//打开定时器0中断允许   //打开定时器
+//	IT0=1;//跳变沿出发方式（下降沿）   	//设置INT0
+//	EX0=1;//打开INT0的中断允许。//	EA=1;//打开总中断	
 //	 P0=0xff;  	 P1=0xff;	 P2=0xff;	 P3=0xff;
-		
+	
 }
 
-void delay1u(u16 i)
-{
-	while(i--);	
-}
-
-u8 keyk1_4()
-{
+u8 keyk1_4()   {
 	if(k1==0) {		  //检测按键K1是否按下
-		delay1u(1000);   //消除抖动 一般大约10ms
+		_delay_ms(10);   //消除抖动 一般大约10ms
 		if(k1==0) {	 //再次判断按键是否按下
 		  	led=~led;	return 1;  //led状态取反
 		}
 		while(!k1);	 //检测按键是否松开
 	}	
 	if(k2==0) {		  //检测按键K1是否按下
-	delay1u(1000);   //消除抖动 一般大约10ms
+	_delay_ms(10);  //消除抖动 一般大约10ms
 	if(k2==0) {	 //再次判断按键是否按下
 		led1=~led1;	return 2; 	  //led状态取反
 	}
-	while(!k1);	 //检测按键是否松开
+	while(!k3);	 //检测按键是否松开
 	}
 	if(k3==0) {		  //检测按键K1是否按下
-		delay1u(1000);   //消除抖动 一般大约10ms
+		_delay_ms(10);   //消除抖动 一般大约10ms
 		if(k3==0) {	 //再次判断按键是否按下
 			led2=~led2;	return 3; 	  //led状态取反
 	}
-	while(!k1);	 //检测按键是否松开
+	while(!k4);	 //检测按键是否松开
 	}	
 	if(k4==0) {		  //检测按键K1是否按下
-		delay1u(1000);   //消除抖动 一般大约10ms
+		_delay_ms(10);  //消除抖动 一般大约10ms
 		if(k4==0) {	 //再次判断按键是否按下
 			led3=~led3;	return 4; 	  //led状态取反
-	}
-	while(!k1);	 //检测按键是否松开
-	}											
-}
+		}
+	}  	return 0;		 }
+
 void main()	   {
-u8 Disp[]=" Pechin Science ";	
-	UsartInit();  //	串口初始化
-	 _delay_us(100);
-	  LcdInit();
-	for(i=0;i<16;i++)
-	{
-		LcdWriteData(Disp[i]);	
+
+ 	UsartInit();  //	串口初始化
+   _delay_us(100);
+	LcdInit();		Ds1302Init(); //	LcdDisplay1("Disp",2);LcdDisplay2("Yuanding",3);	  //第一行 在 x 位置显示
+//  	for(i=0;i<16;i++) 	{ 		_delay_ms(60)	;		}		LcdInit();		//请屏 all 两行
+
+	 while(1)	{
+  sbufsend('A'); sbufsend('B');
+		if(SetState==0)	{ Ds1302ReadTime();	}	//显示时间
+		else	{
+			if(keyk1_4() == 1) {		//检测按键K1是否按下
+				SetPlace++;	  _delay_us(1000);  sbufsend('B');
+				if(SetPlace>=7)	SetPlace=0;					
+			}
+			if(keyk1_4() == 2) {		//检测按键K2是否按下
+					TIME[SetPlace]++;
+					if((TIME[SetPlace]&0x0f)>9)					 //换成BCD码。
+					{
+						TIME[SetPlace]=TIME[SetPlace]+6;
+					}
+					if((TIME[SetPlace]>=0x60)&&(SetPlace<2))		//分秒只能到59
+					{
+						TIME[SetPlace]=0;
+					}
+					if((TIME[SetPlace]>=0x24)&&(SetPlace==2))		//小时只能到23
+					{
+						TIME[SetPlace]=0;
+					}
+					if((TIME[SetPlace]>=0x32)&&(SetPlace==3))		//日只能到31
+					{
+						TIME[SetPlace]=0;	
+					}
+					if((TIME[SetPlace]>=0x13)&&(SetPlace==4))		//月只能到12
+					{
+						TIME[SetPlace]=0;
+					}	
+					if((TIME[SetPlace]>=0x7)&&(SetPlace==5)) {		//周只能到7
+						TIME[SetPlace]=1;
+					}		
+			}						
+		}
+		LcdDisplaytime();	
 	}
-	   while(1)	{
-	   		keyk1_4();	
-	   } ;
-	 _delay_us(1000);
-	 nRF24L01_Init();
-	 while(1)
-	 {
-	  nRF24L01_Set_RX_Mode();
-	  _delay_ms(100);
-	  if(nRF24L01_RX_Data())
-	  {
-	   LED=0;//?????????
-	  }
-	  else//????
-	   LED=1;
-	 }
- while(1)   {
-  for(i=0;i<TX_DATA_WITDH-1;i++)		//发送7次数据
-  {
-   nRF24L01_Set_TX_Mode(&TX_Buffer[i]);//发送数据
-   while(Check_Ack());		//等待发送完成
-    LED=~LED;
-  }
- }
+
+
+//	 _delay_us(100);
+//	 nRF24L01_Init();
+//	 while(1)
+//	 {
+//	  nRF24L01_Set_RX_Mode();
+//	  _delay_ms(100);
+//	  if(nRF24L01_RX_Data())
+//	  {
+//	   LED=0;//?????????
+//	  }
+//	  else		//????
+//	   LED=1;
+//	 }
+// while(1)   {
+//  for(i=0;i<TX_DATA_WITDH-1;i++)		//发送7次数据
+//  {
+//   nRF24L01_Set_TX_Mode(&TX_Buffer[i]);//发送数据
+//   while(Check_Ack());		//等待发送完成
+//    LED=~LED;
+//  }
+// }
 
 }
 
@@ -273,15 +311,27 @@ void Usart() interrupt 4
 	RI = 0;						//清除接收中断标志位
 	sbuf[sbufc]	 = receiveData;
 	 sbufc++; if (sbufc >  sbuflen)   sbufoverflow=1;
-	SBUF=receiveData;				//将接收到的数据放入到发送寄存器
-	while(!TI);						 //等待发送数据完成
-	TI=0;							//清除发送完成标志位
+//	SBUF=receiveData;				//将接收到的数据放入到发送寄存器
+//	while(!TI);						 //等待发送数据完成
+//	TI=0;							//清除发送完成标志位
 }
-
 void Timer0() interrupt 1
 {
 	static u16 i;
 	TH0=0XFC;	TL0=0X18; 	//给定时器赋初值，定时1ms
 	i++;
 	if(i==1000)	{	i=0; 	led=~led;  	}	  			//一秒 
+}
+
+// 函数功能		   : 外部中断0 中断函数
+void Int0() interrupt 0		 
+{
+	_delay_ms(10);
+	if(k3==0)
+	{
+		SetState=~SetState;
+		SetPlace=0;
+		Ds1302Init();	
+	}
+	 sbufsend('C');
 }
