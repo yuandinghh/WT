@@ -1,4 +1,4 @@
-C51 COMPILER V9.01   LCD                                                                   11/28/2019 21:12:12 PAGE 1   
+C51 COMPILER V9.01   LCD                                                                   11/30/2019 02:05:07 PAGE 1   
 
 
 C51 COMPILER V9.01, COMPILATION OF MODULE LCD
@@ -13,39 +13,38 @@ line level    source
    4                                                             
    5          /* 函 数 名         : Lcd1602_Delay1ms * 函数功能          : 延时函数，延时1ms
    6          * 输    入         : c    说名      : 该函数是在12MHZ晶振下，12分频单片机的延时。******/
-   7          
-   8          // uchar TIME[7];
-   9          
-  10          void Lcd1602_Delay1ms(uint c)   //误差 0us
-  11          {
-  12   1          uchar a,b;
-  13   1              for (; c>0; c--)
-  14   1              {
-  15   2                       for (b=199;b>0;b--)
-  16   2                       {
-  17   3                              for(a=1;a>0;a--);
-  18   3                       }      
-  19   2              }
-  20   1      }
-  21          
-  22          /*** 函 数 名       : LcdWriteCom
-  23          * 函数功能                 : 向LCD写入一个字节的命令
-  24          * 输    入         : com   ***/
-  25          #ifndef LCD1602_4PINS    //当没有定义这个LCD1602_4PINS时
-  26          void LcdWriteCom(uchar com)       //写入命令
-  27          {
-  28   1              LCD1602_E = 0;     //使能
-  29   1              LCD1602_RS = 0;    //选择发送命令
-  30   1              LCD1602_RW = 0;    //选择写入
-  31   1              
-  32   1              LCD1602_DATAPINS = com;     //放入命令
-  33   1              Lcd1602_Delay1ms(1);            //等待数据稳定
-  34   1      
-  35   1              LCD1602_E = 1;            //写入时序
-  36   1              Lcd1602_Delay1ms(5);      //保持时间
-  37   1              LCD1602_E = 0;
-  38   1      }
-  39          #else 
+   7          // uchar TIME[7];
+   8          
+   9          void Lcd1602_Delay1ms(uint c)   //误差 0us
+  10          {
+  11   1          uchar a,b;
+  12   1              for (; c>0; c--)
+  13   1              {
+  14   2                       for (b=199;b>0;b--)
+  15   2                       {
+  16   3                              for(a=1;a>0;a--);
+  17   3                       }      
+  18   2              }
+  19   1      }
+  20          
+  21          /*** 函 数 名       : LcdWriteCom
+  22          * 函数功能                 : 向LCD写入一个字节的命令
+  23          * 输    入         : com   ***/
+  24          #ifndef LCD1602_4PINS    //当没有定义这个LCD1602_4PINS时
+  25          void LcdWriteCom(uchar com)       //写入命令
+  26          {
+  27   1              LCD1602_E = 0;     //使能
+  28   1              LCD1602_RS = 0;    //选择发送命令
+  29   1              LCD1602_RW = 0;    //选择写入
+  30   1              
+  31   1              LCD1602_DATAPINS = com;     //放入命令
+  32   1              Lcd1602_Delay1ms(1);            //等待数据稳定
+  33   1      
+  34   1              LCD1602_E = 1;            //写入时序
+  35   1              Lcd1602_Delay1ms(5);      //保持时间
+  36   1              LCD1602_E = 0;
+  37   1      }
+  38          #else 
               void LcdWriteCom(uchar com)       //写入命令
               {
                       LCD1602_E = 0;   //使能清零
@@ -62,34 +61,34 @@ line level    source
                       LCD1602_DATAPINS = com << 4; //发送低四位
                       Lcd1602_Delay1ms(1);
               
-C51 COMPILER V9.01   LCD                                                                   11/28/2019 21:12:12 PAGE 2   
-
                       LCD1602_E = 1;   //写入时序
+C51 COMPILER V9.01   LCD                                                                   11/30/2019 02:05:07 PAGE 2   
+
                       Lcd1602_Delay1ms(5);
                       LCD1602_E = 0;
               }
               #endif
-  61          /*******************************************************************************
-  62          * 函 数 名         : LcdWriteData
-  63          * 函数功能                 : 向LCD写入一个字节的数据
-  64          * 输    入         : dat
-  65          * 输    出         : 无
-  66          *******************************************************************************/                   
-  67          #ifndef         LCD1602_4PINS              
-  68          void LcdWriteData(uchar dat)                    //写入数据
-  69          {
-  70   1              LCD1602_E = 0;  //使能清零
-  71   1              LCD1602_RS = 1; //选择输入数据
-  72   1              LCD1602_RW = 0; //选择写入
-  73   1      
-  74   1              LCD1602_DATAPINS = dat; //写入数据
-  75   1              Lcd1602_Delay1ms(1);
-  76   1      
-  77   1              LCD1602_E = 1;   //写入时序
-  78   1              Lcd1602_Delay1ms(5);   //保持时间
-  79   1              LCD1602_E = 0;
-  80   1      }
-  81          #else
+  60          /*******************************************************************************
+  61          * 函 数 名         : LcdWriteData
+  62          * 函数功能                 : 向LCD写入一个字节的数据
+  63          * 输    入         : dat
+  64          * 输    出         : 无
+  65          *******************************************************************************/                   
+  66          #ifndef         LCD1602_4PINS              
+  67          void LcdWriteData(uchar dat)                    //写入数据
+  68          {
+  69   1              LCD1602_E = 0;  //使能清零
+  70   1              LCD1602_RS = 1; //选择输入数据
+  71   1              LCD1602_RW = 0; //选择写入
+  72   1      
+  73   1              LCD1602_DATAPINS = dat; //写入数据
+  74   1              Lcd1602_Delay1ms(1);
+  75   1      
+  76   1              LCD1602_E = 1;   //写入时序
+  77   1              Lcd1602_Delay1ms(5);   //保持时间
+  78   1              LCD1602_E = 0;
+  79   1      }
+  80          #else
               void LcdWriteData(uchar dat)                    //写入数据
               {
                       LCD1602_E = 0;    //使能清零
@@ -111,24 +110,24 @@ line level    source
                       LCD1602_E = 0;
               }
               #endif
- 103          /*******************************************************************************
- 104          * 函 数 名       : LcdInit()
- 105          * 函数功能               : 初始化LCD屏
- 106          *******************************************************************************/                   
- 107          #ifndef         LCD1602_4PINS
- 108          void LcdInit()                                            //LCD初始化子程序
- 109          {
- 110   1              LcdWriteCom(0x38);  //开显示
- 111   1              LcdWriteCom(0x0c);  //开显示不显示光标
- 112   1              LcdWriteCom(0x06);  //写一个指针加1
- 113   1              LcdWriteCom(0x01);  //清屏
- 114   1              LcdWriteCom(0x80);  //设置数据指针起点
- 115   1      }
- 116          #else
+ 102          /*******************************************************************************
+ 103          * 函 数 名       : LcdInit()
+ 104          * 函数功能               : 初始化LCD屏
+ 105          *******************************************************************************/                   
+ 106          #ifndef         LCD1602_4PINS
+ 107          void LcdInit()                                            //LCD初始化子程序
+ 108          {
+ 109   1              LcdWriteCom(0x38);  //开显示
+ 110   1              LcdWriteCom(0x0c);  //开显示不显示光标
+ 111   1              LcdWriteCom(0x06);  //写一个指针加1
+ 112   1              LcdWriteCom(0x01);  //清屏
+ 113   1              LcdWriteCom(0x80);  //设置数据指针起点
+ 114   1      }
+ 115          #else
               void LcdInit()                    //LCD初始化子程序
-C51 COMPILER V9.01   LCD                                                                   11/28/2019 21:12:12 PAGE 3   
-
               {
+C51 COMPILER V9.01   LCD                                                                   11/30/2019 02:05:07 PAGE 3   
+
                       LcdWriteCom(0x32);       //将8位总线转为4位总线
                       LcdWriteCom(0x28);       //在四位线下的初始化
                       LcdWriteCom(0x0c);  //开显示不显示光标
@@ -137,43 +136,43 @@ line level    source
                       LcdWriteCom(0x80);  //设置数据指针起点
               }
               #endif
- 127          
- 128          void LcdDisplay1(char str[],uchar x) {  //line 1
- 129   1              uchar len,i;   len = strlen(str);
- 130   1               i = 0x80+ x; LcdWriteCom(i);   
- 131   1              for(i=0;i<len;i++) LcdWriteData(str[i]);
- 132   1      }
- 133          void LcdDisplay2(char str[],uchar x) {  //line 2
- 134   1              uchar len,i;   len = strlen(str);
- 135   1               i = 0x80+0x40+ x; LcdWriteCom(i);      
- 136   1              for(i=0;i<len;i++) LcdWriteData(str[i]);
- 137   1      }
- 138          
- 139          void  LcdDisplaytime()     {
- 140   1              LcdWriteCom(0x80+0X40);            //第二行显示
- 141   1              LcdWriteData('0'+TIME[2]/16);                           //时
- 142   1              LcdWriteData('0'+(TIME[2]&0x0f));                                
- 143   1              LcdWriteData('-');
- 144   1              LcdWriteData('0'+TIME[1]/16);                           //分
- 145   1              LcdWriteData('0'+(TIME[1]&0x0f));       
- 146   1              LcdWriteData('-');
- 147   1              LcdWriteData('0'+TIME[0]/16);                           //秒
- 148   1              LcdWriteData('0'+(TIME[0]&0x0f));
- 149   1      
- 150   1              LcdWriteCom(0x80);                //第一行显示
- 151   1              LcdWriteData('2');
- 152   1              LcdWriteData('0');
- 153   1              LcdWriteData('0'+TIME[6]/16);                   //年
- 154   1              LcdWriteData('0'+(TIME[6]&0x0f));
- 155   1              LcdWriteData('-');
- 156   1              LcdWriteData('0'+TIME[4]/16);                   //月
- 157   1              LcdWriteData('0'+(TIME[4]&0x0f));
- 158   1              LcdWriteData('-');
- 159   1              LcdWriteData('0'+TIME[3]/16);                   //日
- 160   1              LcdWriteData('0'+(TIME[3]&0x0f));
- 161   1              LcdWriteCom(0x8D);        //  第13为显示0 开始 。
- 162   1              LcdWriteData('0'+(TIME[5]&0x07));       //星期                   
- 163   1      }
+ 126          
+ 127          void LcdDisplay1(char str[],uchar x) {  //line 1
+ 128   1              uchar len,i;   len = strlen(str);
+ 129   1               i = 0x80+ x; LcdWriteCom(i);   
+ 130   1              for(i=0;i<len;i++) LcdWriteData(str[i]);
+ 131   1      }
+ 132          void LcdDisplay2(char str[],uchar x) {  //line 2
+ 133   1              uchar len,i;   len = strlen(str);
+ 134   1               i = 0x80+0x40+ x; LcdWriteCom(i);      
+ 135   1              for(i=0;i<len;i++) LcdWriteData(str[i]);
+ 136   1      }
+ 137          
+ 138          void  LcdDisplaytime()     {
+ 139   1              LcdWriteCom(0x80+0X40);            //第二行显示
+ 140   1              LcdWriteData('0'+TIME[2]/16);                           //时
+ 141   1              LcdWriteData('0'+(TIME[2]&0x0f));                                
+ 142   1              LcdWriteData('-');
+ 143   1              LcdWriteData('0'+TIME[1]/16);                           //分
+ 144   1              LcdWriteData('0'+(TIME[1]&0x0f));       
+ 145   1              LcdWriteData('-');
+ 146   1              LcdWriteData('0'+TIME[0]/16);                           //秒
+ 147   1              LcdWriteData('0'+(TIME[0]&0x0f));
+ 148   1      
+ 149   1              LcdWriteCom(0x80);                //第一行显示
+ 150   1              LcdWriteData('2');
+ 151   1              LcdWriteData('0');
+ 152   1              LcdWriteData('0'+TIME[6]/16);                   //年
+ 153   1              LcdWriteData('0'+(TIME[6]&0x0f));
+ 154   1              LcdWriteData('-');
+ 155   1              LcdWriteData('0'+TIME[4]/16);                   //月
+ 156   1              LcdWriteData('0'+(TIME[4]&0x0f));
+ 157   1              LcdWriteData('-');
+ 158   1              LcdWriteData('0'+TIME[3]/16);                   //日
+ 159   1              LcdWriteData('0'+(TIME[3]&0x0f));
+ 160   1              LcdWriteCom(0x8D);        //  第13为显示0 开始 。
+ 161   1              LcdWriteData('0'+(TIME[5]&0x07));       //星期                   
+ 162   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE

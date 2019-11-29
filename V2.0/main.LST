@@ -1,4 +1,4 @@
-C51 COMPILER V9.01   MAIN                                                                  11/28/2019 22:12:38 PAGE 1   
+C51 COMPILER V9.01   MAIN                                                                  11/30/2019 02:05:49 PAGE 1   
 
 
 C51 COMPILER V9.01, COMPILATION OF MODULE MAIN
@@ -11,363 +11,436 @@ line level    source
    2          #include "lcd.h"
    3          #include <reg51.h>                       //´ËÎÄ¼þÖÐ¶¨ÒåÁËµ¥Æ¬»úµÄÒ»Ð©ÌØÊâ¹¦ÄÜ¼Ä´æÆ÷
    4          #include "RF2401.h"     
-   5          #include"ds1302.h"
+   5          #include "ds1302.h"
    6          #include <intrins.h>
-   7          
-   8          uchar  sta,i;    //  ×´Ì¬±äÁ¿
-   9          #define RX_DR  (sta & 0x40)  // ½ÓÊÕ³É¹¦ÖÐ¶Ï±êÖ¾
-  10          #define TX_DS  (sta & 0x20)  // ·¢Éä³É¹¦ÖÐ¶Ï±êÖ¾
-  11          #define MAX_RT (sta & 0x10)  // ÖØ·¢Òç³öÖÐ¶Ï±êÖ¾
-  12          #define sbuflen  50   //´®ÐÐ½ÓÊÜ³¤¶È
-  13          #define   delayus()  _delay_us()
-  14          #define  delayms()        _delay_ms()
-  15          bit sbufoverflow = 0 ;    //keil¶¨ÒåÎ»±äÁ¿
-  16          u8 sbuf[sbuflen], sbufc=0;
-  17          unsigned char SetState,SetPlace;
-  18          sbit CE=P1^5;
-  19          sbit IRQ=P1^0;
-  20          sbit CSN=P1^4;
-  21          sbit MOSI=P1^2;
-  22          sbit MISO=P1^1;
-  23          sbit SCK=P1^3;
-  24          sbit led=P2^0;  sbit LED=P2^0;       //sbit LED=P0^0;
-  25          sbit led1=P2^1; sbit led2=P2^2;  sbit led3=P2^3;
-  26          sbit k1 = P3^1 ;    sbit  k2=  P3^0; sbit  k3 = P3^2; sbit  k4 = P3^3;  //key
-  27          sbit K1=P3^1; sbit K2=P3^0; sbit K3=P3^2; sbit K4=P3^3;
-  28          uchar code TX_Addr[]={0x34,0x43,0x10,0x10,0x01};
-  29          uchar code TX_Buffer[]={0xfe,0xfd,0xfb,0xf7,0xef,0xdf,0xbf,0x7f};
-  30          uchar RX_Buffer[RX_DATA_WITDH];
-  31          
-  32          unsigned char SetState,SetPlace;
-  33          //void Delay10ms(void);   //Îó²î 0us
-  34          void sbufsend(uchar c) {
-  35   1              SBUF=c;                         //½«½ÓÊÕµ½µÄÊý¾Ý·ÅÈëµ½·¢ËÍ¼Ä´æÆ÷
-  36   1              while(!TI);                                              //µÈ´ý·¢ËÍÊý¾ÝÍê³É
-  37   1              TI=0;
-  38   1      }       
-  39          void _delay_us(uint x)     {             //ÑÓÊ± ÄÉÃë
-  40   1       uint i,j;
-  41   1       for (j=0;j<x;j++)
-  42   1        for (i=0;i<12;i++);
-  43   1      }
-  44          void _delay_ms(uint x)
-  45          {
-  46   1       uint i,j;
-  47   1       for (j=0;j<x;j++)
-  48   1        for (i=0;i<120;i++);
-  49   1      }
-  50          
-  51          void nRF24L01_Init(void)           //nRF24L01³õÊ¼»¯
-  52          {
-  53   1       CE=0;//´ý»úÄ£Ê½¢ñ
-  54   1       CSN=1;
-  55   1       SCK=0;
-C51 COMPILER V9.01   MAIN                                                                  11/28/2019 22:12:38 PAGE 2   
+   7          #include "temp.h"
+   8          #include <string.h>
+   9          //#include <stdlib.h>      #include <stdio.h>
+  10            
+  11          uchar CNCHAR[6] = "ÉãÊÏ¶È";
+  12          //void LcdDisplaytemp(int);
+  13          //void UsartConfiguration();
+  14          //typedef unsigned int u16;
+  15          uchar  sta,i;    //  ×´Ì¬±äÁ¿
+  16          #define RX_DR  (sta & 0x40)  // ½ÓÊÕ³É¹¦ÖÐ¶Ï±êÖ¾
+  17          #define TX_DS  (sta & 0x20)  // ·¢Éä³É¹¦ÖÐ¶Ï±êÖ¾
+  18          #define MAX_RT (sta & 0x10)  // ÖØ·¢Òç³öÖÐ¶Ï±êÖ¾
+  19          #define sbuflen  50   //´®ÐÐ½ÓÊÜ³¤¶È
+  20          #define   delayus(int)  _delay_us(int)
+  21          #define  delayms(int)     _delay_ms(int)
+  22          bit sbufoverflow = 0 ;    //keil¶¨ÒåÎ»±äÁ¿
+  23          u8  sbufc=0;
+  24          unsigned char idata sbuf[sbuflen];        //¶¨ÒåÔÚidata 
+  25           static char  idata  itoap[7];      //±ØÐëÎªstatic±äÁ¿£¬»òÕßÊÇÈ«¾Ö±äÁ¿
+  26          
+  27          unsigned char SetState,SetPlace;
+  28          sbit CE=P1^0;
+  29          sbit IRQ=P3^3;
+  30          sbit CSN=P3^7;
+  31          sbit MOSI=P2^2;
+  32          sbit MISO=P2^0;
+  33          sbit SCK=P3^6;
+  34          sbit led=P2^0;  sbit LED=P2^0;       //sbit LED=P0^0;
+  35          sbit led1=P2^1; sbit led2=P2^2;  sbit led3=P2^3;  sbit led4=P2^4;  sbit led5=P2^4;  sbit led6=P2^6;
+  36          sbit k1 = P3^1 ;    sbit  k2=  P3^0; sbit  k3 = P3^2; sbit  k4 = P3^3;  //key
+  37          uchar code TX_Addr[]={0x34,0x43,0x10,0x10,0x01};
+  38          uchar code TX_Buffer[]={0xfe,0xfd,0xfb,0xf7,0xef,0xdf,0xbf,0x7f};
+  39          uchar RX_Buffer[RX_DATA_WITDH];
+  40          
+  41          unsigned char SetState,SetPlace;
+  42          //void Delay10ms(void);   //Îó²î 0us
+  43                  
+  44          void _delay_us(uint x)     {             //ÑÓÊ± ÄÉÃë
+  45   1       uint i,j;
+  46   1       for (j=0;j<x;j++)
+  47   1        for (i=0;i<12;i++);
+  48   1      }
+  49          void _delay_ms(uint x)
+  50          {
+  51   1       uint i,j;
+  52   1       for (j=0;j<x;j++)
+  53   1        for (i=0;i<120;i++);
+  54   1      }
+  55          
+C51 COMPILER V9.01   MAIN                                                                  11/30/2019 02:05:49 PAGE 2   
 
-  56   1       IRQ=1;
-  57   1      }
-  58          uchar SPI_RW(uchar byte)   //SPIÊ±Ðòº¯Êý
-  59          {
-  60   1       uchar i;
-  61   1       for(i=0;i<8;i++)//Ò»×Ö½Ú8Î»Ñ­»·8´ÎÐ´Èë
-  62   1       {
-  63   2        if(byte&0x80)//Èç¹ûÊý¾Ý×î¸ßÎ»ÊÇ1
-  64   2         MOSI=1;//ÏòNRF24L01Ð´1
-  65   2        else //·ñÔòÐ´0
-  66   2         MOSI=0;
-  67   2        byte<<=1;//µÍÒ»Î»ÒÆµ½×î¸ßÎ»
-  68   2        SCK=1;//SCKÀ­¸ß£¬Ð´ÈëÒ»Î»Êý¾Ý£¬Í¬Ê±¶ÁÈ¡Ò»Î»Êý¾Ý
-  69   2        if(MISO)
-  70   2         byte|=0x01;
-  71   2        SCK=0;//SCKÀ­µÍ
-  72   2       }
-  73   1       return byte;//·µ»Ø¶ÁÈ¡Ò»×Ö½Ú
-  74   1      }
-  75          //SPIÐ´¼Ä´æÆ÷Ò»×Ö½Úº¯Êý
-  76          //reg:¼Ä´æÆ÷µØÖ·
-  77          //value:Ò»×Ö½Ú£¨Öµ£©
-  78          uchar SPI_W_Reg(uchar reg,uchar value)
-  79          {
-  80   1       uchar status;//·µ»Ø×´Ì¬
-  81   1       CSN=0;//SPIÆ¬Ñ¡
-  82   1       status=SPI_RW(reg);//Ð´Èë¼Ä´æÆ÷µØÖ·£¬Í¬Ê±¶ÁÈ¡×´Ì¬
-  83   1       SPI_RW(value);//Ð´ÈëÒ»×Ö½Ú
-  84   1       CSN=1;//
-  85   1       return status;//·µ»Ø×´Ì¬
-  86   1      }
-  87          uchar SPI_R_byte(uchar reg)        //SPI¶ÁÒ»×Ö½Ú
-  88          {
-  89   1       uchar reg_value;
-  90   1       CSN=0;//SPIÆ¬Ñ¡
-  91   1       SPI_RW(reg);//Ð´ÈëµØÖ·
-  92   1       reg_value=SPI_RW(0);//¶ÁÈ¡¼Ä´æÆ÷µÄÖµ
-  93   1       CSN=1;
-  94   1       return reg_value;//·µ»Ø¶ÁÈ¡µÄÖµ
-  95   1      }
-  96          //SPI¶ÁÈ¡RXFIFO¼Ä´æÆ÷Êý¾Ý
-  97          //reg:¼Ä´æÆ÷µØÖ·
-  98          //Dat_Buffer:ÓÃÀ´´æ¶ÁÈ¡µÄÊý¾Ý
-  99          //DLen:Êý¾Ý³¤¶È
- 100          uchar SPI_R_DBuffer(uchar reg,uchar *Dat_Buffer,uchar Dlen)
- 101          {
- 102   1       uchar status,i;
- 103   1       CSN=0;//SPIÆ¬Ñ¡
- 104   1       status=SPI_RW(reg);//Ð´Èë¼Ä´æÆ÷µØÖ·£¬Í¬Ê±×´Ì¬
- 105   1       for(i=0;i<Dlen;i++)
- 106   1       {
- 107   2        Dat_Buffer[i]=SPI_RW(0);//´æ´¢Êý¾Ý
- 108   2       }
- 109   1       CSN=1;
- 110   1       return status;
- 111   1      }
- 112          //SPIÏòTXFIFO¼Ä´æÆ÷Ð´ÈëÊý¾Ý
- 113          //reg:Ð´Èë¼Ä´æÆ÷µØÖ·
- 114          //TX_Dat_Buffer:´æ·ÅÐèÒª·¢ËÍµÄÊý¾Ý
- 115          //Dlen:Êý¾Ý³¤¶È
- 116          uchar SPI_W_DBuffer(uchar reg,uchar *TX_Dat_Buffer,uchar Dlen)
- 117          {
-C51 COMPILER V9.01   MAIN                                                                  11/28/2019 22:12:38 PAGE 3   
+  56          void sbufsend(uchar c) {         //´®ÐÐ¿Ú·¢ËÍÒ»¸ö×Ö·û
+  57   1              SBUF=c;                         //½«½ÓÊÕµ½µÄÊý¾Ý·ÅÈëµ½·¢ËÍ¼Ä´æÆ÷
+  58   1              while(!TI);                                              //µÈ´ý·¢ËÍÊý¾ÝÍê³É
+  59   1              TI=0;    _delay_ms(10)  ;
+  60   1      }
+  61          void sbufsendstr(char str[]) {  //·¢ËÍ×Ö·û´®
+  62   1              uchar len,i;   len = strlen(str);
+  63   1              for(i=0;i<len;i++) sbufsend(str[i]);  }
+  64          
+  65          void LcdDisplaytemp(int temp) {  //lcdÏÔÊ¾       ÎÂ¶ÈÖµ   LCDÏÔÊ¾¶ÁÈ¡µ½µÄÎÂ¶È    ÊäÈë   : v  ÎÂ¶ÈÖµ
+  66   1        unsigned char  datas[] = {0, 0, 0, 0, 0}; //¶¨ÒåÊý×é
+  67   1        float tp;  
+  68   1              if(temp< 0)                             //µ±ÎÂ¶ÈÖµÎª¸ºÊý
+  69   1              {
+  70   2                      LcdWriteCom(0x80);              //Ð´µØÖ· 80±íÊ¾³õÊ¼µØÖ·
+  71   2      //              SBUF='-';       while(!TI);     TI=0;   //½«½ÓÊÕµ½µÄÊý¾Ý·ÅÈëµ½·¢ËÍ¼Ä´æÆ÷
+  72   2                  LcdWriteData('-');                  //ÏÔÊ¾¸º
+  73   2                      //ÒòÎª¶ÁÈ¡µÄÎÂ¶ÈÊÇÊµ¼ÊÎÂ¶ÈµÄ²¹Âë£¬ËùÒÔ¼õ1£¬ÔÙÈ¡·´Çó³öÔ­Âë
+  74   2                      temp=temp-1;            temp=~temp;                     tp=temp;
+  75   2                      temp=tp*0.0625*100+0.5; //ÁôÁ½¸öÐ¡Êýµã¾Í*100£¬+0.5ÊÇËÄÉáÎåÈë£¬ÒòÎªCÓïÑÔ¸¡µãÊý×ª»»ÎªÕûÐÍµÄÊ±ºò°ÑÐ¡Êýµã
+  76   2      //ºóÃæµÄÊý×Ô¶¯È¥µô£¬²»¹ÜÊÇ·ñ´óÓÚ0.5£¬¶ø+0.5Ö®ºó´óÓÚ0.5µÄ¾ÍÊÇ½ø1ÁË£¬Ð¡ÓÚ0.5µÄ¾ÍËãÓÉ?0.5£¬»¹ÊÇÔÚÐ¡ÊýµãºóÃæ¡£
+  77   2              }
+  78   1              else    {                       
+  79   2                      LcdWriteCom(0x80);              //Ð´µØÖ· 80±íÊ¾³õÊ¼µØÖ·
+  80   2                  LcdWriteData('+');          //ÏÔÊ¾Õý
+  81   2      //              SBUF='+';                       while(!TI);                     TI=0;            //Çå³ý·¢ËÍÍê³É±êÖ¾Î»
+  82   2                      tp=temp;//ÒòÎªÊý¾Ý´¦ÀíÓÐÐ¡ÊýµãËùÒÔ½«ÎÂ¶È¸³¸øÒ»¸ö¸¡µãÐÍ±äÁ¿Èç¹ûÎÂ¶ÈÊÇÕýµÄÄÇÃ´£¬ÄÇÃ´ÕýÊýµÄÔ­Âë¾ÍÊÇ²¹ÂëËü±¾
+             -Éí
+  83   2                      temp=tp*0.0625*100+0.5; //ÁôÁ½¸öÐ¡Êýµã¾Í*100£¬+0.5ÊÇËÄÉáÎåÈë£¬ÒòÎªCÓïÑÔ¸¡µãÊý×ª»»ÎªÕûÐÍµÄÊ±ºò°ÑÐ¡Êýµã
+  84   2              }
+  85   1              datas[0] = temp / 10000;        datas[1] = temp % 10000 / 1000;
+  86   1              datas[2] = temp % 1000 / 100;   datas[3] = temp % 100 / 10;             datas[4] = temp % 10;
+  87   1      
+  88   1              LcdWriteCom(0x82);                //Ð´µØÖ· 80±íÊ¾³õÊ¼µØÖ·
+  89   1              LcdWriteData('0'+datas[0]); //°ÙÎ» 
+  90   1      //      SBUF = '0'+datas[0];while (!TI);        TI = 0;                 //½«½ÓÊÕµ½µÄÊý¾Ý·ÅÈëµ½·¢ËÍ¼Ä´æÆ÷
+  91   1              LcdWriteCom(0x83);               //Ð´µØÖ· 80±íÊ¾³õÊ¼µØÖ·
+  92   1              LcdWriteData('0'+datas[1]); //Ê®Î»
+  93   1      //      SBUF = '0'+datas[1];            while (!TI);    TI = 0;
+  94   1              LcdWriteCom(0x84);              //Ð´µØÖ· 80±íÊ¾³õÊ¼µØÖ·
+  95   1              LcdWriteData('0'+datas[2]); //¸öÎ» 
+  96   1      //      SBUF = '0'+datas[2];    while (!TI);  TI = 0;
+  97   1              LcdWriteCom(0x85);              //Ð´µØÖ· 80±íÊ¾³õÊ¼µØÖ·
+  98   1              LcdWriteData('.');              //ÏÔÊ¾ ¡®.¡¯            SBUF = '.';     while (!TI); TI = 0;
+  99   1              LcdWriteCom(0x86);               //Ð´µØÖ· 80±íÊ¾³õÊ¼µØÖ·
+ 100   1              LcdWriteData('0'+datas[3]); //ÏÔÊ¾Ð¡Êýµã        SBUF = '0'+datas[3];    while (!TI);    TI = 0;
+ 101   1              LcdWriteCom(0x87);               //Ð´µØÖ· 80±íÊ¾³õÊ¼µØÖ·
+ 102   1              LcdWriteData('0'+datas[4]); //ÏÔÊ¾Ð¡Êýµã        SBUF = '0'+datas[4];//½«½ÓÊÕµ½µÄÊý¾Ý·ÅÈëµ½·¢ËÍ¼Ä´æÆ÷    while (
+             -!-TI);          TI = 0;   
+ 103   1      //      for(i=0; i<6; i++)              {               SBUF = CNCHAR[i];               while (!TI);            TI = 0;         }
+ 104   1      }
+ 105          void nRF24L01_Init(void)           //nRF24L01³õÊ¼»¯
+ 106          {
+ 107   1       CE=0;//´ý»úÄ£Ê½¢ñ
+ 108   1       CSN=1;   SCK=0; IRQ=1;   }
+ 109          uchar SPI_RW(uchar byte)   //SPIÊ±Ðòº¯Êý
+ 110          {
+ 111   1       uchar i;
+ 112   1       for(i=0;i<8;i++)//Ò»×Ö½Ú8Î»Ñ­»·8´ÎÐ´Èë
+ 113   1       {
+ 114   2        if(byte&0x80)//Èç¹ûÊý¾Ý×î¸ßÎ»ÊÇ1
+ 115   2         MOSI=1;//ÏòNRF24L01Ð´1
+C51 COMPILER V9.01   MAIN                                                                  11/30/2019 02:05:49 PAGE 3   
 
- 118   1       uchar status,i;
- 119   1       CSN=0;//SPIÆ¬Ñ¡£¬Æô¶¯Ê±Ðò
- 120   1       status=SPI_RW(reg);
- 121   1       for(i=0;i<Dlen;i++)
- 122   1       {
- 123   2        SPI_RW(TX_Dat_Buffer[i]);//·¢ËÍÊý¾Ý
- 124   2       }
- 125   1       CSN=1;
- 126   1       return status; 
- 127   1      }
- 128          void nRF24L01_Set_TX_Mode(uchar *TX_Data)          //ÉèÖÃ·¢ËÍÄ£Ê½
- 129          {
- 130   1       CE=0;//´ý»ú£¨Ð´¼Ä´æÆ÷Ö®Ç°Ò»¶¨Òª½øÈë´ý»úÄ£Ê½»òµôµçÄ£Ê½£©
- 131   1       SPI_W_DBuffer(W_REGISTER+TX_ADDR,TX_Addr,TX_ADDR_WITDH);//Ð´¼Ä´æÆ÷Ö¸Áî+½ÓÊÕ½ÚµãµØÖ·+µØÖ·¿í¶È
- 132   1       SPI_W_DBuffer(W_REGISTER+RX_ADDR_P0,TX_Addr,TX_ADDR_WITDH);//ÎªÁË½ÓÊÕÉè±¸Ó¦´ðÐÅºÅ£¬½ÓÊÕÍ¨µÀ0µØÖ·Óë·¢ËÍµØÖ
+ 116   2        else //·ñÔòÐ´0
+ 117   2         MOSI=0;
+ 118   2        byte<<=1;//µÍÒ»Î»ÒÆµ½×î¸ßÎ»
+ 119   2        SCK=1;//SCKÀ­¸ß£¬Ð´ÈëÒ»Î»Êý¾Ý£¬Í¬Ê±¶ÁÈ¡Ò»Î»Êý¾Ý
+ 120   2        if(MISO)
+ 121   2         byte|=0x01;
+ 122   2        SCK=0;//SCKÀ­µÍ
+ 123   2       }
+ 124   1       return byte;//·µ»Ø¶ÁÈ¡Ò»×Ö½Ú
+ 125   1      }
+ 126          //SPIÐ´¼Ä´æÆ÷Ò»×Ö½Úº¯Êý
+ 127          //reg:¼Ä´æÆ÷µØÖ·
+ 128          //value:Ò»×Ö½Ú£¨Öµ£©
+ 129          uchar SPI_W_Reg(uchar reg,uchar value)
+ 130          {
+ 131   1       uchar status;//·µ»Ø×´Ì¬
+ 132   1       CSN=0;//SPIÆ¬Ñ¡
+ 133   1       status=SPI_RW(reg);//Ð´Èë¼Ä´æÆ÷µØÖ·£¬Í¬Ê±¶ÁÈ¡×´Ì¬
+ 134   1       SPI_RW(value);//Ð´ÈëÒ»×Ö½Ú
+ 135   1       CSN=1;//
+ 136   1       return status;//·µ»Ø×´Ì¬
+ 137   1      }
+ 138          uchar SPI_R_byte(uchar reg)        //SPI¶ÁÒ»×Ö½Ú
+ 139          {
+ 140   1       uchar reg_value;
+ 141   1       CSN=0;//SPIÆ¬Ñ¡
+ 142   1       SPI_RW(reg);//Ð´ÈëµØÖ·
+ 143   1       reg_value=SPI_RW(0);//¶ÁÈ¡¼Ä´æÆ÷µÄÖµ
+ 144   1       CSN=1;
+ 145   1       return reg_value;//·µ»Ø¶ÁÈ¡µÄÖµ
+ 146   1      }
+ 147          //SPI¶ÁÈ¡RXFIFO¼Ä´æÆ÷Êý¾Ý
+ 148          //reg:¼Ä´æÆ÷µØÖ·
+ 149          //Dat_Buffer:ÓÃÀ´´æ¶ÁÈ¡µÄÊý¾Ý
+ 150          //DLen:Êý¾Ý³¤¶È
+ 151          uchar SPI_R_DBuffer(uchar reg,uchar *Dat_Buffer,uchar Dlen)
+ 152          {
+ 153   1       uchar status,i;
+ 154   1       CSN=0;//SPIÆ¬Ñ¡
+ 155   1       status=SPI_RW(reg);//Ð´Èë¼Ä´æÆ÷µØÖ·£¬Í¬Ê±×´Ì¬
+ 156   1       for(i=0;i<Dlen;i++)
+ 157   1       {
+ 158   2        Dat_Buffer[i]=SPI_RW(0);//´æ´¢Êý¾Ý
+ 159   2       }
+ 160   1       CSN=1;
+ 161   1       return status;
+ 162   1      }
+ 163          //SPIÏòTXFIFO¼Ä´æÆ÷Ð´ÈëÊý¾Ý              reg:Ð´Èë¼Ä´æÆ÷µØÖ·
+ 164          //TX_Dat_Buffer:´æ·ÅÐèÒª·¢ËÍµÄÊý¾Ý       Dlen:Êý¾Ý³¤¶È
+ 165          uchar SPI_W_DBuffer(uchar reg,uchar *TX_Dat_Buffer,uchar Dlen)   {
+ 166   1       uchar status,i;
+ 167   1       CSN=0;                                                 //SPIÆ¬Ñ¡£¬Æô¶¯Ê±Ðò
+ 168   1       status=SPI_RW(reg);
+ 169   1       for(i=0;i<Dlen;i++)
+ 170   1       {
+ 171   2        SPI_RW(TX_Dat_Buffer[i]);//·¢ËÍÊý¾Ý
+ 172   2       }
+ 173   1       CSN=1;
+ 174   1       return status; 
+ 175   1      }
+ 176          void nRF24L01_Set_TX_Mode(uchar *TX_Data)          //ÉèÖÃ·¢ËÍÄ£Ê½
+ 177          {
+C51 COMPILER V9.01   MAIN                                                                  11/30/2019 02:05:49 PAGE 4   
+
+ 178   1       CE=0;//´ý»ú£¨Ð´¼Ä´æÆ÷Ö®Ç°Ò»¶¨Òª½øÈë´ý»úÄ£Ê½»òµôµçÄ£Ê½£©
+ 179   1       SPI_W_DBuffer(W_REGISTER+TX_ADDR,TX_Addr,TX_ADDR_WITDH);//Ð´¼Ä´æÆ÷Ö¸Áî+½ÓÊÕ½ÚµãµØÖ·+µØÖ·¿í¶È
+ 180   1       SPI_W_DBuffer(W_REGISTER+RX_ADDR_P0,TX_Addr,TX_ADDR_WITDH);//ÎªÁË½ÓÊÕÉè±¸Ó¦´ðÐÅºÅ£¬½ÓÊÕÍ¨µÀ0µØÖ·Óë·¢ËÍµØÖ
              -·ÏàÍ¬
- 133   1       SPI_W_DBuffer(W_TX_PLOAD,TX_Data,TX_DATA_WITDH);//Ð´ÓÐÐ§Êý¾ÝµØÖ·+ÓÐÐ§Êý¾Ý+ÓÐÐ§Êý¾Ý¿í¶È
- 134   1       SPI_W_Reg(W_REGISTER+EN_AA,0x01);//½ÓÊÕÍ¨µÀ0×Ô¶¯Ó¦´ð
- 135   1       SPI_W_Reg(W_REGISTER+EN_RX_ADDR,0x01);//Ê¹ÄÜ½ÓÊÕÍ¨µÀ0
- 136   1       SPI_W_Reg(W_REGISTER+SETUP_RETR,0x0a);//×Ô¶¯ÖØ·¢ÑÓÊ±250US+86US£¬ÖØ·¢10´Î
- 137   1       SPI_W_Reg(W_REGISTER+RF_CH,0);//2.4GHZ
- 138   1       SPI_W_Reg(W_REGISTER+RF_SETUP,0x07);//1MbpsËÙÂÊ,·¢Éä¹¦ÂÊ:0DBM,µÍÔëÉù·Å´óÆ÷ÔöÒæ
- 139   1       SPI_W_Reg(W_REGISTER+CONFIG,0x0e);//·¢ËÍÄ£Ê½,ÉÏµç,16Î»CRCÐ£Ñé,CRCÊ¹ÄÜ
- 140   1       CE=1;//Æô¶¯·¢Éä
- 141   1       delayms(5);//CE¸ßµçÆ½³ÖÐøÊ±¼ä×îÉÙ10USÒÔÉÏ
-*** WARNING C209 IN LINE 141 OF MAIN.C: '__delay_ms': too few actual parameters
-*** WARNING C307 IN LINE 141 OF main.c: macro 'delayms': parameter count mismatch
- 142   1      }
- 143          uchar Check_Ack(void)       //¼ì²âÓ¦´ðÐÅºÅ
- 144          {
- 145   1       sta=SPI_R_byte(R_REGISTER+STATUS);//¶ÁÈ¡¼Ä´æ×´Ì¬
- 146   1       if(TX_DS||MAX_RT)//Èç¹ûTX_DS»òMAX_RTÎª1,ÔòÇå³ýÖÐ¶ÏºÍÇå³ýTX_FIFO¼Ä´æÆ÷µÄÖµ
- 147   1       {
- 148   2        SPI_W_Reg(W_REGISTER+STATUS,0xff);
- 149   2        CSN=0;
- 150   2        SPI_RW(FLUSH_TX);//Èç¹ûÃ»ÓÐÕâÒ»¾äÖ»ÄÜ·¢Ò»´ÎÊý¾Ý£¬´ó¼ÒÒª×¢Òâ
- 151   2        CSN=1;
- 152   2        return 0;
- 153   2       }
- 154   1       else
- 155   1        return 1;
- 156   1      }
- 157          
- 158          void nRF24L01_Set_RX_Mode(void)
- 159          {
- 160   1       CE=0;//??
- 161   1       SPI_W_DBuffer(W_REGISTER+TX_ADDR,TX_Addr,TX_ADDR_WITDH);
- 162   1       SPI_W_DBuffer(W_REGISTER+RX_ADDR_P0,TX_Addr,TX_ADDR_WITDH);
- 163   1       SPI_W_Reg(W_REGISTER+EN_AA,0x01);//auot ack
- 164   1       SPI_W_Reg(W_REGISTER+EN_RX_ADDR,0x01);
- 165   1       SPI_W_Reg(W_REGISTER+SETUP_RETR,0x0a);
- 166   1       SPI_W_Reg(W_REGISTER+RX_PW_P0,RX_DATA_WITDH);
- 167   1       SPI_W_Reg(W_REGISTER+RF_CH,0);
- 168   1       SPI_W_Reg(W_REGISTER+RF_SETUP,0x07);//0db,lna
- 169   1       SPI_W_Reg(W_REGISTER+CONFIG,0x0f);
- 170   1       
- 171   1       CE=1;
- 172   1       _delay_ms(5);
- 173   1      }
- 174          
- 175          uchar nRF24L01_RX_Data(void)     {
- 176   1       sta=SPI_R_byte(R_REGISTER+STATUS);
-C51 COMPILER V9.01   MAIN                                                                  11/28/2019 22:12:38 PAGE 4   
+ 181   1       SPI_W_DBuffer(W_TX_PLOAD,TX_Data,TX_DATA_WITDH);//Ð´ÓÐÐ§Êý¾ÝµØÖ·+ÓÐÐ§Êý¾Ý+ÓÐÐ§Êý¾Ý¿í¶È
+ 182   1       SPI_W_Reg(W_REGISTER+EN_AA,0x01);//½ÓÊÕÍ¨µÀ0×Ô¶¯Ó¦´ð
+ 183   1       SPI_W_Reg(W_REGISTER+EN_RX_ADDR,0x01);//Ê¹ÄÜ½ÓÊÕÍ¨µÀ0
+ 184   1       SPI_W_Reg(W_REGISTER+SETUP_RETR,0x0a);//×Ô¶¯ÖØ·¢ÑÓÊ±250US+86US£¬ÖØ·¢10´Î
+ 185   1       SPI_W_Reg(W_REGISTER+RF_CH,0);//2.4GHZ
+ 186   1       SPI_W_Reg(W_REGISTER+RF_SETUP,0x07);//1MbpsËÙÂÊ,·¢Éä¹¦ÂÊ:0DBM,µÍÔëÉù·Å´óÆ÷ÔöÒæ
+ 187   1       SPI_W_Reg(W_REGISTER+CONFIG,0x0e);//·¢ËÍÄ£Ê½,ÉÏµç,16Î»CRCÐ£Ñé,CRCÊ¹ÄÜ
+ 188   1       CE=1;//Æô¶¯·¢Éä
+ 189   1       delayms(5);//CE¸ßµçÆ½³ÖÐøÊ±¼ä×îÉÙ10USÒÔÉÏ
+ 190   1      }
+ 191          uchar Check_Ack(void)       //¼ì²âÓ¦´ðÐÅºÅ
+ 192          {
+ 193   1       sta=SPI_R_byte(R_REGISTER+STATUS);//¶ÁÈ¡¼Ä´æ×´Ì¬
+ 194   1       if(TX_DS||MAX_RT)//Èç¹ûTX_DS»òMAX_RTÎª1,ÔòÇå³ýÖÐ¶ÏºÍÇå³ýTX_FIFO¼Ä´æÆ÷µÄÖµ
+ 195   1       {
+ 196   2        SPI_W_Reg(W_REGISTER+STATUS,0xff);
+ 197   2        CSN=0;
+ 198   2        SPI_RW(FLUSH_TX);//Èç¹ûÃ»ÓÐÕâÒ»¾äÖ»ÄÜ·¢Ò»´ÎÊý¾Ý£¬´ó¼ÒÒª×¢Òâ
+ 199   2        CSN=1;
+ 200   2        return 0;
+ 201   2       }
+ 202   1       else
+ 203   1        return 1;
+ 204   1      }
+ 205          
+ 206          void nRF24L01_Set_RX_Mode(void)
+ 207          {
+ 208   1       CE=0;                          //??
+ 209   1       SPI_W_DBuffer(W_REGISTER+TX_ADDR,TX_Addr,TX_ADDR_WITDH);
+ 210   1       SPI_W_DBuffer(W_REGISTER+RX_ADDR_P0,TX_Addr,TX_ADDR_WITDH);
+ 211   1       SPI_W_Reg(W_REGISTER+EN_AA,0x01);//auot ack
+ 212   1       SPI_W_Reg(W_REGISTER+EN_RX_ADDR,0x01);
+ 213   1       SPI_W_Reg(W_REGISTER+SETUP_RETR,0x0a);
+ 214   1       SPI_W_Reg(W_REGISTER+RX_PW_P0,RX_DATA_WITDH);
+ 215   1       SPI_W_Reg(W_REGISTER+RF_CH,0);
+ 216   1       SPI_W_Reg(W_REGISTER+RF_SETUP,0x07);//0db,lna
+ 217   1       SPI_W_Reg(W_REGISTER+CONFIG,0x0f);
+ 218   1       
+ 219   1       CE=1;
+ 220   1       _delay_ms(5);
+ 221   1      }
+ 222          
+ 223          uchar nRF24L01_RX_Data(void)     {
+ 224   1       sta=SPI_R_byte(R_REGISTER+STATUS);
+ 225   1       if(RX_DR)       {
+ 226   2        CE=0;
+ 227   2        SPI_R_DBuffer(R_RX_PLOAD,RX_Buffer,RX_DATA_WITDH);
+ 228   2        SPI_W_Reg(W_REGISTER+STATUS,0xff);
+ 229   2        CSN=0;
+ 230   2        SPI_RW(FLUSH_RX);
+ 231   2        CSN=1;
+ 232   2        return 1;
+ 233   2       }
+ 234   1       else     return 0;
+ 235   1      }
+ 236          
+ 237          u8 keyk1_4()   {
+ 238   1              if(k1==0) {               //¼ì²â°´¼üK1ÊÇ·ñ°´ÏÂ
+C51 COMPILER V9.01   MAIN                                                                  11/30/2019 02:05:49 PAGE 5   
 
- 177   1       if(RX_DR)       {
- 178   2        CE=0;
- 179   2        SPI_R_DBuffer(R_RX_PLOAD,RX_Buffer,RX_DATA_WITDH);
- 180   2        SPI_W_Reg(W_REGISTER+STATUS,0xff);
- 181   2        CSN=0;
- 182   2        SPI_RW(FLUSH_RX);
- 183   2        CSN=1;
- 184   2        return 1;
- 185   2       }
- 186   1       else     return 0;
- 187   1      }
- 188          
- 189          void UsartInit()         //ÏµÍ³³õÊ¼»¯
- 190          {
- 191   1              SCON=0X50;                      //ÉèÖÃÎª¹¤×÷·½Ê½1
- 192   1              TMOD=0X21;                      //ÉèÖÃ¼ÆÊýÆ÷¹¤×÷·½Ê½2
- 193   1              PCON=0X80;                      //²¨ÌØÂÊ¼Ó±¶
- 194   1              TH1=0XF3;               TL1=0XF3;               //¼ÆÊýÆ÷³õÊ¼ÖµÉèÖÃ£¬0XF3²¨ÌØÂÊÊÇ4800µÄ   th1=0xfd:19200      
- 195   1              ES=1;   EA=1;   //´ò¿ª×ÜÖÐ¶Ï            //´ò¿ª½ÓÊÕÖÐ¶Ï
- 196   1              TR1=1;                                  //´ò¿ª¼ÆÊýÆ÷    TMOD|=0X01;//Ñ¡ÔñÎª¶¨Ê±Æ÷0Ä£Ê½£¬¹¤×÷·½Ê½1£¬½öÓÃTR0´ò¿ªÆô¶¯¡£
- 197   1              TH0=0XFC;       TL0=0X18;       //¸ø¶¨Ê±Æ÷¸³³õÖµ£¬¶¨Ê±1ms
- 198   1              ET0=1;          TR0=1;                  //´ò¿ª¶¨Ê±Æ÷0ÖÐ¶ÏÔÊÐí   //´ò¿ª¶¨Ê±Æ÷
- 199   1      //      IT0=1;//Ìø±äÑØ³ö·¢·½Ê½£¨ÏÂ½µÑØ£©        //ÉèÖÃINT0
- 200   1      //      EX0=1;//´ò¿ªINT0µÄÖÐ¶ÏÔÊÐí¡£//  EA=1;//´ò¿ª×ÜÖÐ¶Ï       
- 201   1      //       P0=0xff;        P1=0xff;        P2=0xff;        P3=0xff;
- 202   1              
- 203   1      }
- 204          
- 205          u8 keyk1_4()   {
- 206   1              if(k1==0) {               //¼ì²â°´¼üK1ÊÇ·ñ°´ÏÂ
- 207   2                      _delay_ms(10);   //Ïû³ý¶¶¶¯ Ò»°ã´óÔ¼10ms
- 208   2                      if(k1==0) {      //ÔÙ´ÎÅÐ¶Ï°´¼üÊÇ·ñ°´ÏÂ
- 209   3                              led=~led;       return 1;  //led×´Ì¬È¡·´
- 210   3                      }
- 211   2                      while(!k1);      //¼ì²â°´¼üÊÇ·ñËÉ¿ª
- 212   2              }       
- 213   1              if(k2==0) {               //¼ì²â°´¼üK1ÊÇ·ñ°´ÏÂ
- 214   2              _delay_ms(10);  //Ïû³ý¶¶¶¯ Ò»°ã´óÔ¼10ms
- 215   2              if(k2==0) {      //ÔÙ´ÎÅÐ¶Ï°´¼üÊÇ·ñ°´ÏÂ
- 216   3                      led1=~led1;     return 2;         //led×´Ì¬È¡·´
- 217   3              }
- 218   2              while(!k3);      //¼ì²â°´¼üÊÇ·ñËÉ¿ª
- 219   2              }
- 220   1              if(k3==0) {               //¼ì²â°´¼üK1ÊÇ·ñ°´ÏÂ
- 221   2                      _delay_ms(10);   //Ïû³ý¶¶¶¯ Ò»°ã´óÔ¼10ms
- 222   2                      if(k3==0) {      //ÔÙ´ÎÅÐ¶Ï°´¼üÊÇ·ñ°´ÏÂ
- 223   3                              led2=~led2;     return 3;         //led×´Ì¬È¡·´
- 224   3              }
- 225   2              while(!k4);      //¼ì²â°´¼üÊÇ·ñËÉ¿ª
- 226   2              }       
- 227   1              if(k4==0) {               //¼ì²â°´¼üK1ÊÇ·ñ°´ÏÂ
- 228   2                      _delay_ms(10);  //Ïû³ý¶¶¶¯ Ò»°ã´óÔ¼10ms
- 229   2                      if(k4==0) {      //ÔÙ´ÎÅÐ¶Ï°´¼üÊÇ·ñ°´ÏÂ
- 230   3                              led3=~led3;     return 4;         //led×´Ì¬È¡·´
- 231   3                      }
- 232   2              }       return 0;                }
- 233          
- 234          void main()        {
- 235   1      
- 236   1              UsartInit();  //        ´®¿Ú³õÊ¼»¯
- 237   1         _delay_us(100);
- 238   1              LcdInit();              Ds1302Init(); //        LcdDisplay1("Disp",2);LcdDisplay2("Yuanding",3);          //µÚÒ»ÐÐ ÔÚ x Î»ÖÃÏÔÊ¾
-C51 COMPILER V9.01   MAIN                                                                  11/28/2019 22:12:38 PAGE 5   
+ 239   2                      _delay_ms(10);   //Ïû³ý¶¶¶¯ Ò»°ã´óÔ¼10ms
+ 240   2                      if(k1==0) {      //ÔÙ´ÎÅÐ¶Ï°´¼üÊÇ·ñ°´ÏÂ
+ 241   3                              led=~led;       return 1;  //led×´Ì¬È¡·´
+ 242   3                      }
+ 243   2                      while(!k1);      //¼ì²â°´¼üÊÇ·ñËÉ¿ª
+ 244   2              }       
+ 245   1              if(k2==0) {               //¼ì²â°´¼üK1ÊÇ·ñ°´ÏÂ
+ 246   2              _delay_ms(10);  //Ïû³ý¶¶¶¯ Ò»°ã´óÔ¼10ms
+ 247   2              if(k2==0) {      //ÔÙ´ÎÅÐ¶Ï°´¼üÊÇ·ñ°´ÏÂ
+ 248   3                      led1=~led1;     return 2;         //led×´Ì¬È¡·´
+ 249   3              }
+ 250   2              while(!k3);      //¼ì²â°´¼üÊÇ·ñËÉ¿ª
+ 251   2              }
+ 252   1              if(k3==0) {               //¼ì²â°´¼üK1ÊÇ·ñ°´ÏÂ
+ 253   2                      _delay_ms(10);   //Ïû³ý¶¶¶¯ Ò»°ã´óÔ¼10ms
+ 254   2                      if(k3==0) {      //ÔÙ´ÎÅÐ¶Ï°´¼üÊÇ·ñ°´ÏÂ
+ 255   3                              led2=~led2;     return 3;         //led×´Ì¬È¡·´
+ 256   3              }
+ 257   2              while(!k4);      //¼ì²â°´¼üÊÇ·ñËÉ¿ª
+ 258   2              }       
+ 259   1              if(k4==0) {               //¼ì²â°´¼üK1ÊÇ·ñ°´ÏÂ
+ 260   2                      _delay_ms(10);  //Ïû³ý¶¶¶¯ Ò»°ã´óÔ¼10ms
+ 261   2                      if(k4==0) {      //ÔÙ´ÎÅÐ¶Ï°´¼üÊÇ·ñ°´ÏÂ
+ 262   3                              led3=~led3;     return 4;         //led×´Ì¬È¡·´
+ 263   3                      }
+ 264   2              }       return 0;                }
+ 265          
+ 266          
+ 267          /*******************************************************************************
+ 268          * º¯ÊýÃû         : Usart() interrupt 4
+ 269          * º¯Êý¹¦ÄÜ                : ´®¿ÚÍ¨ÐÅÖÐ¶Ïº¯Êý
+ 270          *******************************************************************************/
+ 271          void Usart() interrupt 4                {   //´®ÐÐ¿ÚÖÐ¶Ï
+ 272   1              RI = 0;                                         //Çå³ý½ÓÊÕÖÐ¶Ï±êÖ¾Î»
+ 273   1              sbuf[sbufc]      = SBUF;        //³öÈ¥½ÓÊÕµ½µÄÊý¾Ý
+ 274   1               sbufc++; if (sbufc >  sbuflen)   sbufoverflow=1;
+ 275   1      //      SBUF=receiveData;                               //½«½ÓÊÕµ½µÄÊý¾Ý·ÅÈëµ½·¢ËÍ¼Ä´æÆ÷
+ 276   1      //      while(!TI);                                              //µÈ´ý·¢ËÍÊý¾ÝÍê³É
+ 277   1      //      TI=0;                                                   //Çå³ý·¢ËÍÍê³É±êÖ¾Î»
+ 278   1      }
+ 279          void Timer0() interrupt 1       {        //time0 
+ 280   1              static u16 i;
+ 281   1              TH0=0XFC;       TL0=0X18;       //¸ø¶¨Ê±Æ÷¸³³õÖµ£¬¶¨Ê±1ms
+ 282   1              i++;
+ 283   1              if(i==1000)     {       i=0;    led=~led;       }                               //Ò»Ãë 
+ 284   1      }
+ 285          
+ 286          // º¯Êý¹¦ÄÜ                : Íâ²¿ÖÐ¶Ï0 ÖÐ¶Ïº¯Êý
+ 287          void Int0() interrupt 0 {
+ 288   1              _delay_ms(10);
+ 289   1              if(k3==0)
+ 290   1              {
+ 291   2                      SetState=~SetState;
+ 292   2                      SetPlace=0;
+ 293   2                      Ds1302Init();   
+ 294   2              }
+ 295   1              led5 = ~led5;
+ 296   1      sbufsendstr("int0");
+ 297   1      }
+ 298          void disptime() {
+ 299   1                      if(SetState==0) { Ds1302ReadTime();     }       //ÏÔÊ¾Ê±¼ä
+ 300   1                      else    {
+C51 COMPILER V9.01   MAIN                                                                  11/30/2019 02:05:49 PAGE 6   
 
- 239   1      //      for(i=0;i<16;i++)       {               _delay_ms(60)   ;               }               LcdInit();              //ÇëÆÁ all Á½ÐÐ
- 240   1      
- 241   1               while(1)       {
- 242   2        sbufsend('A'); sbufsend('B');
- 243   2                      if(SetState==0) { Ds1302ReadTime();     }       //ÏÔÊ¾Ê±¼ä
- 244   2                      else    {
- 245   3                              if(keyk1_4() == 1) {            //¼ì²â°´¼üK1ÊÇ·ñ°´ÏÂ
- 246   4                                      SetPlace++;       _delay_us(1000);  sbufsend('B');
- 247   4                                      if(SetPlace>=7) SetPlace=0;                                     
- 248   4                              }
- 249   3                              if(keyk1_4() == 2) {            //¼ì²â°´¼üK2ÊÇ·ñ°´ÏÂ
- 250   4                                              TIME[SetPlace]++;
- 251   4                                              if((TIME[SetPlace]&0x0f)>9)                                      //»»³ÉBCDÂë¡£
- 252   4                                              {
- 253   5                                                      TIME[SetPlace]=TIME[SetPlace]+6;
- 254   5                                              }
- 255   4                                              if((TIME[SetPlace]>=0x60)&&(SetPlace<2))                //·ÖÃëÖ»ÄÜµ½59
- 256   4                                              {
- 257   5                                                      TIME[SetPlace]=0;
- 258   5                                              }
- 259   4                                              if((TIME[SetPlace]>=0x24)&&(SetPlace==2))               //Ð¡Ê±Ö»ÄÜµ½23
- 260   4                                              {
- 261   5                                                      TIME[SetPlace]=0;
- 262   5                                              }
- 263   4                                              if((TIME[SetPlace]>=0x32)&&(SetPlace==3))               //ÈÕÖ»ÄÜµ½31
- 264   4                                              {
- 265   5                                                      TIME[SetPlace]=0;       
- 266   5                                              }
- 267   4                                              if((TIME[SetPlace]>=0x13)&&(SetPlace==4))               //ÔÂÖ»ÄÜµ½12
- 268   4                                              {
- 269   5                                                      TIME[SetPlace]=0;
- 270   5                                              }       
- 271   4                                              if((TIME[SetPlace]>=0x7)&&(SetPlace==5)) {              //ÖÜÖ»ÄÜµ½7
- 272   5                                                      TIME[SetPlace]=1;
- 273   5                                              }               
- 274   4                              }                                               
- 275   3                      }
- 276   2                      LcdDisplaytime();       
- 277   2              }
- 278   1      
- 279   1      
- 280   1      //       _delay_us(100);
- 281   1      //       nRF24L01_Init();
- 282   1      //       while(1)
- 283   1      //       {
- 284   1      //        nRF24L01_Set_RX_Mode();
- 285   1      //        _delay_ms(100);
- 286   1      //        if(nRF24L01_RX_Data())
- 287   1      //        {
- 288   1      //         LED=0;//?????????
- 289   1      //        }
- 290   1      //        else          //????
- 291   1      //         LED=1;
- 292   1      //       }
- 293   1      // while(1)   {
- 294   1      //  for(i=0;i<TX_DATA_WITDH-1;i++)              //·¢ËÍ7´ÎÊý¾Ý
- 295   1      //  {
- 296   1      //   nRF24L01_Set_TX_Mode(&TX_Buffer[i]);//·¢ËÍÊý¾Ý
- 297   1      //   while(Check_Ack());                //µÈ´ý·¢ËÍÍê³É
- 298   1      //    LED=~LED;
- 299   1      //  }
- 300   1      // }
-C51 COMPILER V9.01   MAIN                                                                  11/28/2019 22:12:38 PAGE 6   
+ 301   2                              if(keyk1_4() == 1) {            //¼ì²â°´¼üK1ÊÇ·ñ°´ÏÂ
+ 302   3                                      SetPlace++;       _delay_us(1000);  sbufsend('B');
+ 303   3                                      if(SetPlace>=7) SetPlace=0;                                     
+ 304   3                              }
+ 305   2                              if(keyk1_4() == 2) {            //¼ì²â°´¼üK2ÊÇ·ñ°´ÏÂ
+ 306   3                                              TIME[SetPlace]++;
+ 307   3                                              if((TIME[SetPlace]&0x0f)>9)                                      //»»³ÉBCDÂë¡£
+ 308   3                                              {
+ 309   4                                                      TIME[SetPlace]=TIME[SetPlace]+6;
+ 310   4                                              }
+ 311   3                                              if((TIME[SetPlace]>=0x60)&&(SetPlace<2))                //·ÖÃëÖ»ÄÜµ½59
+ 312   3                                              {
+ 313   4                                                      TIME[SetPlace]=0;
+ 314   4                                              }
+ 315   3                                              if((TIME[SetPlace]>=0x24)&&(SetPlace==2))               //Ð¡Ê±Ö»ÄÜµ½23
+ 316   3                                              {
+ 317   4                                                      TIME[SetPlace]=0;
+ 318   4                                              }
+ 319   3                                              if((TIME[SetPlace]>=0x32)&&(SetPlace==3))               //ÈÕÖ»ÄÜµ½31
+ 320   3                                              {
+ 321   4                                                      TIME[SetPlace]=0;       
+ 322   4                                              }
+ 323   3                                              if((TIME[SetPlace]>=0x13)&&(SetPlace==4))               //ÔÂÖ»ÄÜµ½12
+ 324   3                                              {
+ 325   4                                                      TIME[SetPlace]=0;
+ 326   4                                              }       
+ 327   3                                              if((TIME[SetPlace]>=0x7)&&(SetPlace==5)) {              //ÖÜÖ»ÄÜµ½7
+ 328   4                                                      TIME[SetPlace]=1;
+ 329   4                                              }               
+ 330   3                              }                                               
+ 331   2                      }
+ 332   1                      LcdDisplaytime();       
+ 333   1      }
+ 334          
+ 335          /*  ¹¦ÄÜ£ºÕûÊý×ª»»Îª×Ö·û´®
+ 336           * char s[] µÄ×÷ÓÃÊÇ´æ´¢ÕûÊýµÄÃ¿Ò»Î»  */
+ 337          
+ 338          char *itoa(int n) {
+ 339   1          int i = 0,isNegative = 0;
+ 340   1          if((isNegative = n) < 0) //Èç¹ûÊÇ¸ºÊý£¬ÏÈ×ªÎªÕýÊý
+ 341   1          {
+ 342   2              n = -n;
+ 343   2          }
+ 344   1          do      //´Ó¸÷Î»¿ªÊ¼±äÎª×Ö·û£¬Ö±µ½×î¸ßÎ»£¬×îºóÓ¦¸Ã·´×ª
+ 345   1          {
+ 346   2              itoap[i++] = n%10 + '0';
+ 347   2              n = n/10;
+ 348   2          }while(n > 0);
+ 349   1          if(isNegative < 0)   //Èç¹ûÊÇ¸ºÊý£¬²¹ÉÏ¸ººÅ
+ 350   1          {
+ 351   2              itoap[i++] = '-';
+ 352   2          }
+ 353   1          itoap[i] = '\0';    //×îºó¼ÓÉÏ×Ö·û´®½áÊø·û
+ 354   1          return itoap  ;   //reverse(s);
+ 355   1      }
+ 356          
+ 357          
+ 358          
+ 359          void UsartInit()         //ÏµÍ³³õÊ¼»¯
+ 360          {
+ 361   1              SCON=0X50;                      //ÉèÖÃÎª¹¤×÷·½Ê½1
+ 362   1              TMOD=0X21;                      //ÉèÖÃ¼ÆÊýÆ÷¹¤×÷·½Ê½2
+C51 COMPILER V9.01   MAIN                                                                  11/30/2019 02:05:49 PAGE 7   
 
- 301   1      
- 302   1      }
- 303          
- 304          /*******************************************************************************
- 305          * º¯ÊýÃû         : Usart() interrupt 4
- 306          * º¯Êý¹¦ÄÜ                : ´®¿ÚÍ¨ÐÅÖÐ¶Ïº¯Êý
- 307          *******************************************************************************/
- 308          void Usart() interrupt 4
- 309          {
- 310   1              u8 receiveData;         receiveData=SBUF;                       //³öÈ¥½ÓÊÕµ½µÄÊý¾Ý
- 311   1              RI = 0;                                         //Çå³ý½ÓÊÕÖÐ¶Ï±êÖ¾Î»
- 312   1              sbuf[sbufc]      = receiveData;
- 313   1               sbufc++; if (sbufc >  sbuflen)   sbufoverflow=1;
- 314   1      //      SBUF=receiveData;                               //½«½ÓÊÕµ½µÄÊý¾Ý·ÅÈëµ½·¢ËÍ¼Ä´æÆ÷
- 315   1      //      while(!TI);                                              //µÈ´ý·¢ËÍÊý¾ÝÍê³É
- 316   1      //      TI=0;                                                   //Çå³ý·¢ËÍÍê³É±êÖ¾Î»
- 317   1      }
- 318          void Timer0() interrupt 1
- 319          {
- 320   1              static u16 i;
- 321   1              TH0=0XFC;       TL0=0X18;       //¸ø¶¨Ê±Æ÷¸³³õÖµ£¬¶¨Ê±1ms
- 322   1              i++;
- 323   1              if(i==1000)     {       i=0;    led=~led;       }                               //Ò»Ãë 
- 324   1      }
- 325          
- 326          // º¯Êý¹¦ÄÜ                : Íâ²¿ÖÐ¶Ï0 ÖÐ¶Ïº¯Êý
- 327          void Int0() interrupt 0          
- 328          {
- 329   1              _delay_ms(10);
- 330   1              if(k3==0)
- 331   1              {
- 332   2                      SetState=~SetState;
- 333   2                      SetPlace=0;
- 334   2                      Ds1302Init();   
- 335   2              }
- 336   1               sbufsend('C');
- 337   1      }
+ 363   1              PCON=0X80;                      //²¨ÌØÂÊ¼Ó±¶
+ 364   1              TH1=0XF3;               TL1=0XF3;               //¼ÆÊýÆ÷³õÊ¼ÖµÉèÖÃ£¬0XF3²¨ÌØÂÊÊÇ4800µÄ   th1=0xfd:19200      
+ 365   1              ES=1;   EA=1;   //´ò¿ª×ÜÖÐ¶Ï            //´ò¿ª½ÓÊÕÖÐ¶Ï
+ 366   1              TR1=1;                                  //´ò¿ª¼ÆÊýÆ÷    TMOD|=0X01;//Ñ¡ÔñÎª¶¨Ê±Æ÷0Ä£Ê½£¬¹¤×÷·½Ê½1£¬½öÓÃTR0´ò¿ªÆô¶¯¡£
+ 367   1              TH0=0XFC;       TL0=0X18;       //¸ø¶¨Ê±Æ÷¸³³õÖµ£¬¶¨Ê±1ms
+ 368   1      //      ET0=1;          TR0=1;                  //´ò¿ª¶¨Ê±Æ÷0ÖÐ¶ÏÔÊÐí   //´ò¿ª¶¨Ê±Æ÷
+ 369   1      //      IT0=1;//Ìø±äÑØ³ö·¢·½Ê½£¨ÏÂ½µÑØ£©        //ÉèÖÃINT0
+ 370   1      //      EX0=1;//´ò¿ªINT0µÄÖÐ¶ÏÔÊÐí¡£//  EA=1;//´ò¿ª×ÜÖÐ¶Ï       
+ 371   1      //       P0=0xff;        P1=0xff;        P2=0xff;        P3=0xff;
+ 372   1              
+ 373   1      }
+ 374          
+ 375          
+ 376          void main()        {
+ 377   1              UsartInit();  //        ´®¿Ú³õÊ¼»¯
+ 378   1         _delay_us(100);
+ 379   1              LcdInit();      //      Ds1302Init(); //        LcdDisplay1("Disp",2);LcdDisplay2("Yuanding",3);          //µÚÒ»ÐÐ ÔÚ x Î»ÖÃÏÔÊ¾
+ 380   1      //      for(i=0;i<16;i++)       {               _delay_ms(60)   ;               }               LcdInit();              //ÇëÆÁ all Á½ÐÐ
+ 381   1      // int t16 ;    char str[5];
+ 382   1       //     LcdWriteCom(0x88);      LcdWriteData('C');                      //Ð´µØÖ· 80±íÊ¾³õÊ¼µØÖ·
+ 383   1      //      t16 =  Ds18b20ReadTemp();       //      itoa(t16);                sbufsendstr("1CDDDDCC2 "); 
+ 384   1       //   LcdDisplaytemp(Ds18b20ReadTemp());
+ 385   1               _delay_us(100);
+ 386   1               nRF24L01_Init();
+ 387   1          while(1)    {          //
+ 388   2               sbufsend('A'); 
+ 389   2                nRF24L01_Set_RX_Mode();
+ 390   2                _delay_ms(100);
+ 391   2                if(nRF24L01_RX_Data())          {
+ 392   3                 led=0;                                                       //?????????
+ 393   3                       sbufsendstr(" led0 "); 
+ 394   3                }
+ 395   2                else                  //????
+ 396   2                 led=1;        sbufsendstr(" led1 ");   //ÊÕµ½Êý¾Ý
+ 397   2               }
+ 398   1      
+ 399   1       while(1)   {
+ 400   2        for(i=0;i<TX_DATA_WITDH-1;i++)                //·¢ËÍ7´ÎÊý¾Ý
+ 401   2        {
+ 402   3         nRF24L01_Set_TX_Mode(&TX_Buffer[i]);//·¢ËÍÊý¾Ý
+ 403   3         while(Check_Ack());          //µÈ´ý·¢ËÍÍê³É
+ 404   3          LED=~LED;
+ 405   3        }
+ 406   2       }
+ 407   1      
+ 408   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    931    ----
-   CONSTANT SIZE    =     13    ----
+   CODE SIZE        =   1444    ----
+   CONSTANT SIZE    =     37    ----
    XDATA SIZE       =   ----    ----
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =     65      13
-   IDATA SIZE       =   ----    ----
+   DATA SIZE        =     21      33
+   IDATA SIZE       =     57    ----
    BIT SIZE         =      1    ----
 END OF MODULE INFORMATION.
 
 
-C51 COMPILATION COMPLETE.  2 WARNING(S),  0 ERROR(S)
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

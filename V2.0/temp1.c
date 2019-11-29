@@ -1,26 +1,12 @@
-#include"temp.h"
+#include "temp.h"
 
 extern void _delay_ms(int);
-extern void _delay_us(int);
-/*******************************************************************************
-* 函数名         : Delay1ms
-* 函数功能		   : 延时函数
-***/
+extern void  sbufsend(uchar); 
 
-void Delay1ms(unsigned int y)
+/** 函数名         : Ds18b20Init
+* 输出         	 : 初始化成功返回1，失败返回0   *****/
+ unsigned char Ds18b20Init()
 {
-	unsigned int x;
-	for(y;y>0;y--)
-		for(x=110;x>0;x--);
-}
-
-/*******************************************************************************
-* 函数名         : Ds18b20Init
-* 函数功能		   : 初始化
-* 输入           : 无
-* 输出         	 : 初始化成功返回1，失败返回0
-*******************************************************************************/
-unsigned char Ds18b20Init()	   {
 	unsigned int i;
 	DSPORT=0;			 //将总线拉低480us~960us
 	i=70;	
@@ -39,15 +25,11 @@ unsigned char Ds18b20Init()	   {
 /*******************************************************************************
 * 函数名         : Ds18b20WriteByte
 * 函数功能		   : 向18B20写入一个字节
-* 输入           : com
-* 输出         	 : 无
-*******************************************************************************/
-
-void Ds18b20WriteByte(unsigned char dat)
+* 输入           : com   *******/
+ void Ds18b20WriteByte(unsigned char dat)
 {
 	unsigned int i,j;
-	for(j=0;j<8;j++)
-	{
+	for(j=0;j<8;j++)  	{
 		DSPORT=0;			//每写入一位数据之前先把总线拉低1us
 		i++;
 		DSPORT=dat&0x01; //然后写入一个数据，从最低位开始
@@ -60,15 +42,11 @@ void Ds18b20WriteByte(unsigned char dat)
 /*******************************************************************************
 * 函数名         : Ds18b20ReadByte
 * 函数功能		   : 读取一个字节
-* 输入           : com
-* 输出         	 : 无
-*******************************************************************************/
- unsigned char Ds18b20ReadByte()
-{
+* 输入           : com   **/
+unsigned char Ds18b20ReadByte()	  {
 	unsigned char byte,bi;
 	unsigned int i,j;	
-	for(j=8;j>0;j--)
-	{
+	for(j=8;j>0;j--)  	{
 		DSPORT=0;//先将总线拉低1us
 		i++;
 		DSPORT=1;//然后释放总线
@@ -82,53 +60,46 @@ void Ds18b20WriteByte(unsigned char dat)
 	}				
 	return byte;
 }
-/*******************************************************************************
-* 函数名         : Ds18b20ChangTemp
+/** 函数名         : Ds18b20ChangTemp
 * 函数功能		   : 让18b20开始转换温度
-* 输入           : com
-* 输出         	 : 无
-*******************************************************************************/
+* 输入           : com  ***/
 
-void  Ds18b20ChangTemp()
-{
+void  Ds18b20ChangTemp()   {
 	Ds18b20Init();
-	_delay_us(200);
+	_delay_ms(1);
 	Ds18b20WriteByte(0xcc);		//跳过ROM操作命令		 
 	Ds18b20WriteByte(0x44);	    //温度转换命令
-//	_delay_us(2000);	//等待转换成功，而如果你是一直刷着的话，就不用这个延时了
+//	Delay1ms(100);	//等待转换成功，而如果你是一直刷着的话，就不用这个延时了
    
 }
-/*******************************************************************************
-* 函数名         : Ds18b20ReadTempCom
+/** 函数名         : Ds18b20ReadTempCom
 * 函数功能		   : 发送读取温度命令
-* 输入           : com
-* 输出         	 : 无
-*******************************************************************************/
+* 输入           : com  ***/
 
-void  Ds18b20ReadTempCom()
-{	
-
-	Ds18b20Init();
-	_delay_us(200);
+void  Ds18b20ReadTempCom()	{	
+ 	Ds18b20Init();
+	 _delay_ms(1);
 	Ds18b20WriteByte(0xcc);	 //跳过ROM操作命令
 	Ds18b20WriteByte(0xbe);	 //发送读取温度命令
 }
 /*******************************************************************************
 * 函数名         : Ds18b20ReadTemp
 * 函数功能		   : 读取温度
-* 输入           : com
-* 输出         	 : 无
-*******************************************************************************/
+* 输入           : com **/
 
 int Ds18b20ReadTemp()
 {
 	int temp=0;
 	unsigned char tmh,tml;
+   sbufsend('D'); 
 	Ds18b20ChangTemp();			 	//先写入转换命令
 	Ds18b20ReadTempCom();			//然后等待转换完后发送读取温度命令
 	tml=Ds18b20ReadByte();		//读取温度值共16位，先读低字节
 	tmh=Ds18b20ReadByte();		//再读高字节
-	temp=tmh;		temp<<=8;	temp|=tml;		return temp;
+	temp=tmh;
+	temp<<=8;
+	temp|=tml;
+	return temp;
 }
 
 

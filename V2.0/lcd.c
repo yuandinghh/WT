@@ -4,7 +4,6 @@
 						   
 /* 函 数 名         : Lcd1602_Delay1ms * 函数功能	   : 延时函数，延时1ms
 * 输    入         : c	  说名      : 该函数是在12MHZ晶振下，12分频单片机的延时。******/
-
 // uchar TIME[7];
 
 void Lcd1602_Delay1ms(uint c)   //误差 0us
