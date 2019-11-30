@@ -220,7 +220,7 @@ void nRF24L01_Set_RX_Mode(void)
  _delay_ms(5);
 }
 
-uchar nRF24L01_RX_Data(void)	 {
+uchar nRF24L01_RX_Data(void)	    {
  sta=SPI_R_byte(R_REGISTER+STATUS);
  if(RX_DR)	 {
   CE=0;
